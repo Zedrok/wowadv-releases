@@ -136,6 +136,54 @@ function createWindow() {
 }
 
 // ---------------------------------------------------------------------------
+// Instalar dependencias Python si faltan
+// ---------------------------------------------------------------------------
+const REQUIRED_PYTHON_PACKAGES = ['playwright', 'pywin32', 'pycryptodome', 'browser-cookie3']
+
+function ensurePythonDeps(pythonCmd, callback) {
+  // Verificar qué paquetes faltan
+  const checkScript = `
+import importlib, sys
+missing = []
+checks = {'playwright': 'playwright', 'pywin32': 'win32api', 'pycryptodome': 'Crypto', 'browser-cookie3': 'browsercookie'}
+for pkg, mod in checks.items():
+    try: importlib.import_module(mod)
+    except ImportError: missing.append(pkg)
+print(','.join(missing))
+`
+  let missing = ''
+  const check = spawn(pythonCmd, ['-c', checkScript], { stdio: ['ignore', 'pipe', 'pipe'] })
+  check.stdout.on('data', d => { missing += d.toString().trim() })
+  check.on('exit', () => {
+    const pkgs = missing.split(',').filter(Boolean)
+    if (pkgs.length === 0) { callback(); return }
+
+    sendToRenderer('scraper-log', `[INFO] Instalando dependencias: ${pkgs.join(', ')}\n`)
+    const install = spawn(pythonCmd, ['-m', 'pip', 'install', ...pkgs], {
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    install.stdout.on('data', d => sendToRenderer('scraper-log', d.toString()))
+    install.stderr.on('data', d => sendToRenderer('scraper-log', d.toString()))
+    install.on('exit', code => {
+      if (code !== 0) {
+        sendToRenderer('scraper-log', '[ERROR] Falló la instalación de dependencias.\n')
+        sendToRenderer('scraper-status', { running: false, code })
+        sendToRenderer('show-logs', null)
+        return
+      }
+      // Instalar browsers de playwright
+      sendToRenderer('scraper-log', '[INFO] Instalando playwright msedge...\n')
+      const playwrightInstall = spawn(pythonCmd, ['-m', 'playwright', 'install', 'msedge'], {
+        stdio: ['ignore', 'pipe', 'pipe'],
+      })
+      playwrightInstall.stdout.on('data', d => sendToRenderer('scraper-log', d.toString()))
+      playwrightInstall.stderr.on('data', d => sendToRenderer('scraper-log', d.toString()))
+      playwrightInstall.on('exit', () => callback())
+    })
+  })
+}
+
+// ---------------------------------------------------------------------------
 // Scraper Python
 // ---------------------------------------------------------------------------
 function startScraper() {
@@ -153,6 +201,10 @@ function startScraper() {
   sendToRenderer('scraper-log', `[INFO] Script: ${PYTHON_SCRIPT}\n`)
   sendToRenderer('scraper-log', `[INFO] CWD: ${ROOT}\n\n`)
 
+  ensurePythonDeps(pythonCmd, () => launchScraper(pythonCmd))
+}
+
+function launchScraper(pythonCmd) {
   scraper = spawn(pythonCmd, [PYTHON_SCRIPT], {
     cwd:   ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],

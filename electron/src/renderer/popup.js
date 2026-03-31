@@ -1,5 +1,48 @@
 /* ── Helpers (mismo que renderer.js) ──────────────────────── */
 
+let pricesServices = []
+
+function fmtGold(n) {
+  if (n >= 1_000) return (n / 1_000).toLocaleString('en', { maximumFractionDigits: 1 }) + 'k'
+  return String(n)
+}
+
+function matchPrices(r) {
+  if (!pricesServices.length) return []
+  const diff      = (r.difficulty || '').toLowerCase()
+  const raidText  = (r.raids      || '').toLowerCase()
+  const lootText  = (r.loot       || '').toLowerCase()
+  const isHeroic  = diff.includes('heroic')
+  const isNormal  = diff.includes('normal')
+  const isUnsaved = lootText.includes('unsaved')
+  const hasVoidspire = raidText.includes('voidspire')
+  const hasDreamrift = raidText.includes('dreamrift')
+
+  return pricesServices.filter(s => {
+    // Solo categorías de raid (Normal=27, Heroic=30)
+    const catOk = isHeroic ? s.serviceCategoryId === 30
+                : isNormal ? s.serviceCategoryId === 27
+                : false
+    if (!catOk) return false
+
+    const n = s.name.toLowerCase()
+    const sHasVoidspire = n.includes('voidspire')
+    const sHasDreamrift = n.includes('dreamrift')
+
+    // Filtrar por Saved / Unsaved
+    const sIsUnsaved = n.includes('unsaved')
+    if (isUnsaved !== sIsUnsaved) return false
+
+    // Filtrar por qué raids incluye el run
+    if (hasVoidspire && hasDreamrift) {
+      return (sHasVoidspire && sHasDreamrift) || sHasVoidspire || sHasDreamrift
+    }
+    if (hasVoidspire) return sHasVoidspire
+    if (hasDreamrift) return sHasDreamrift
+    return false
+  })
+}
+
 function parseTimeToMinutes(timeStr) {
   const m = String(timeStr || '').match(/(\d+):(\d+)\s*(AM|PM)/i)
   if (!m) return 0
@@ -95,25 +138,32 @@ function buildCard(r, diffCls, isFull) {
 /* ── Build section HTML ────────────────────────────────────── */
 
 function buildSection(title, badgeCls, { available, full }, diffCls) {
-  const total = available.length + full.length
-  let cardsHtml = ''
+  // Ocultar sección completa si no hay nada que mostrar
+  if (available.length === 0 && full.length === 0) return ''
 
-  if (total === 0) {
-    cardsHtml = `<p class="no-runs">Sin próximos runs.</p>`
-  } else {
-    if (available.length > 0) {
-      cardsHtml += `<div class="cards-col">${available.map(r => buildCard(r, diffCls, false)).join('')}</div>`
-    }
-    if (full.length > 0) {
-      cardsHtml += `<div class="row-label">Full</div><div class="cards-col">${full.map(r => buildCard(r, diffCls, true)).join('')}</div>`
-    }
+  let cardsHtml = ''
+  if (available.length > 0) {
+    cardsHtml += `<div class="cards-col">${available.map(r => buildCard(r, diffCls, false)).join('')}</div>`
   }
+  if (full.length > 0) {
+    cardsHtml += `<div class="row-label">Full</div><div class="cards-col">${full.map(r => buildCard(r, diffCls, true)).join('')}</div>`
+  }
+
+  // Precios asociados a esta categoría
+  const sampleRow = available[0] || full[0]
+  const matched = sampleRow ? matchPrices(sampleRow) : []
+  const priceRows = matched.map(s => {
+    const name = s.name.replace(/^🔸\s*/, '')
+    return `<div class="ptip-row"><span class="ptip-name">${esc(name)}</span><span class="ptip-price">${fmtGold(s.price)}</span></div>`
+  }).join('')
+  const priceTip = matched.length ? `<div class="price-tip" hidden>${priceRows}</div>` : ''
 
   return `
     <div class="section">
       <div class="section-title">
         <span class="badge ${badgeCls}">${title}</span>
         <span class="section-count">${available.length} disponible${available.length !== 1 ? 's' : ''}${full.length > 0 ? ` · ${full.length} full` : ''}</span>
+        ${priceTip}
       </div>
       ${cardsHtml}
     </div>`
@@ -122,6 +172,11 @@ function buildSection(title, badgeCls, { available, full }, diffCls) {
 /* ── Main render ───────────────────────────────────────────── */
 
 async function render() {
+  // Asegurar precios cargados
+  if (!pricesServices.length) {
+    const pd = await window.api.getPrices()
+    pricesServices = pd?.services || []
+  }
   const payload = await window.api.getRaids()
   const allRows = payload?.data || []
   const now     = new Date()
@@ -208,6 +263,8 @@ document.getElementById('btnReload').addEventListener('click', async () => {
 document.getElementById('chkFull').addEventListener('change', render)
 
 document.getElementById('content').addEventListener('click', e => {
+  // No propagar clicks del botón de precios
+  if (e.target.closest('.btn-price-info')) { e.stopPropagation(); return }
   const card = e.target.closest('[data-url]')
   if (card) window.api.openUrl(card.dataset.url)
 })
@@ -219,5 +276,23 @@ document.getElementById('btnCompact').addEventListener('click', () => {
 
 // Auto-actualizar cuando llegan datos nuevos
 window.api.onRaidsData(() => render())
+
+// Tooltip de precios — se activa al hacer hover en cualquier card
+const content = document.getElementById('content')
+content.addEventListener('mouseover', e => {
+  const card = e.target.closest('.card')
+  if (!card) return
+  const tip = card.closest('.section')?.querySelector('.price-tip')
+  if (!tip) return
+  tip.hidden = false
+})
+content.addEventListener('mouseout', e => {
+  const card = e.target.closest('.card')
+  if (!card) return
+  // Solo ocultar si el mouse sale de la card completamente
+  if (card.contains(e.relatedTarget)) return
+  const tip = card.closest('.section')?.querySelector('.price-tip')
+  if (tip) tip.hidden = true
+})
 
 render()
