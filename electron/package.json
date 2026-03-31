@@ -1,0 +1,46 @@
+{
+  "name": "bakers-raid-monitor",
+  "version": "1.0.0",
+  "description": "Live monitor for thebakers.work raids",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "start": "electron-vite preview",
+    "dist": "electron-vite build && electron-packager . \"Bakers Raid Monitor\" --platform=win32 --arch=x64 --out=dist --overwrite --extra-resource=../bakers_raids.py"
+  },
+  "build": {
+    "appId": "com.bakers.raid-monitor",
+    "productName": "Bakers Raid Monitor",
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "asar": false,
+    "files": [
+      "out/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../bakers_raids.py",
+        "to": "bakers_raids.py"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    }
+  },
+  "devDependencies": {
+    "@electron/packager": "^19.1.0",
+    "electron": "^33.0.0",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^2.3.0"
+  }
+}

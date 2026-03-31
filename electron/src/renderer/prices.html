@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Precios</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #0d0d14;
+      --bg2:      #13131f;
+      --bg3:      #1a1a2a;
+      --border:   #2a2a3f;
+      --gold:     #c8a84b;
+      --gold-dim: #8a7030;
+      --text:     #c8c8d8;
+      --text-dim: #666688;
+      --radius:   6px;
+      --font-ui:  "Segoe UI", system-ui, sans-serif;
+    }
+    html, body {
+      height: 100%; background: var(--bg); color: var(--text);
+      font-family: var(--font-ui); font-size: 13px;
+      display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+    }
+
+    /* Titlebar */
+    .titlebar {
+      -webkit-app-region: drag;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--bg2); border-bottom: 1px solid var(--border);
+      padding: 0 14px; height: 36px; flex-shrink: 0;
+    }
+    .titlebar-title { font-size: 13px; font-weight: 600; color: var(--gold); }
+    .titlebar-right { -webkit-app-region: no-drag; display: flex; align-items: center; gap: 8px; }
+    .titlebar-meta  { font-size: 11px; color: var(--text-dim); }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; background: var(--bg2);
+      border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .toolbar input {
+      flex: 1; background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 5px 10px; font-size: 12px; outline: none;
+    }
+    .toolbar input:focus { border-color: var(--gold-dim); }
+    .btn-refresh {
+      -webkit-app-region: no-drag;
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: var(--radius);
+      padding: 5px 10px; font-size: 12px; cursor: pointer;
+      white-space: nowrap; transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-refresh:hover { border-color: var(--gold-dim); color: var(--gold); }
+    .btn-refresh:disabled { opacity: 0.5; cursor: default; }
+
+    /* Scroll area */
+    .content {
+      flex: 1; overflow-y: scroll; padding: 8px 12px;
+    }
+    .content::-webkit-scrollbar { width: 6px; }
+    .content::-webkit-scrollbar-track { background: var(--bg); }
+    .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Accordion */
+    .accordion {
+      border: 1px solid var(--border); border-radius: var(--radius);
+      overflow: hidden; margin-bottom: 4px;
+    }
+    .acc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 9px 14px; background: var(--bg2); cursor: pointer;
+      user-select: none; gap: 8px;
+      transition: background 0.15s;
+    }
+    .acc-header:hover { background: var(--bg3); }
+    .acc-title {
+      font-size: 12px; font-weight: 700; color: var(--gold);
+      text-transform: uppercase; letter-spacing: 0.04em; flex: 1;
+    }
+    .acc-count { font-size: 11px; color: var(--text-dim); }
+    .acc-arrow {
+      font-size: 10px; color: var(--text-dim);
+      transition: transform 0.2s;
+    }
+    .accordion.open .acc-arrow { transform: rotate(180deg); }
+
+    .acc-body {
+      display: none; flex-direction: column; gap: 0;
+      background: var(--bg);
+    }
+    .accordion.open .acc-body { display: flex; }
+
+    /* Service row */
+    .svc-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; border-top: 1px solid var(--border);
+      transition: background 0.12s;
+    }
+    .svc-row:hover { background: var(--bg2); }
+    .svc-row.hot { border-left: 3px solid var(--gold); padding-left: 11px; }
+
+    .btn-star {
+      background: none; border: none; cursor: pointer; padding: 0 2px;
+      font-size: 14px; line-height: 1; color: var(--text-dim);
+      flex-shrink: 0; transition: color 0.15s; user-select: none;
+    }
+    .btn-star:hover  { color: var(--gold); }
+    .btn-star.active { color: var(--gold); }
+
+    .acc-fav .acc-header { background: #1a1500; }
+    .acc-fav .acc-title  { color: var(--gold); }
+
+    .svc-name {
+      flex: 1; font-size: 12px; color: var(--text);
+      min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .svc-desc {
+      font-size: 11px; color: var(--text-dim);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      max-width: 180px; flex-shrink: 0;
+    }
+    .svc-upd {
+      font-size: 10px; white-space: nowrap; flex-shrink: 0;
+    }
+    .svc-upd.upd-fresh  { color: #4caf50; }
+    .svc-upd.upd-warn   { color: #ffc107; }
+    .svc-upd.upd-stale  { color: #f44336; }
+    .svc-price {
+      font-size: 13px; font-weight: 700; color: var(--gold);
+      white-space: nowrap; flex-shrink: 0;
+    }
+
+    .placeholder {
+      text-align: center; color: var(--text-dim);
+      padding: 40px 0; font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="titlebar">
+    <span class="titlebar-title">💰 Lista de Precios</span>
+    <div class="titlebar-right">
+      <span class="titlebar-meta" id="lastUpdate">—</span>
+    </div>
+  </div>
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="Buscar servicio…" />
+    <button class="btn-refresh" id="btnRefresh">⟳ Actualizar</button>
+  </div>
+  <div class="content" id="content">
+    <p class="placeholder">Cargando precios…</p>
+  </div>
+  <script type="module" src="./prices.js"></script>
+</body>
+</html>

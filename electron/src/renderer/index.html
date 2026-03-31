@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baker's Raid Monitor</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ── Titlebar ─────────────────────────────────────────── -->
+  <header class="titlebar" id="titlebar">
+    <div class="titlebar-left">
+      <span class="shield">🛡</span>
+      <span class="app-title">Baker's Raid Monitor</span>
+    </div>
+    <div class="titlebar-right">
+      <div class="status-pill" id="statusPill">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Inactivo</span>
+      </div>
+      <button class="btn btn-gold"   id="btnStart"   title="Iniciar scraper">▶ Start</button>
+      <button class="btn btn-danger" id="btnStop"    title="Detener scraper" hidden>■ Stop</button>
+      <button class="btn btn-outline" id="btnRefresh" title="Forzar refresco ahora">⟳ Refresh</button>
+      <button class="btn btn-outline" id="btnNextRuns" title="Ver próximos runs">▦ Next Runs</button>
+      <button class="btn btn-outline" id="btnPrices" title="Ver lista de precios">💰 Precios</button>
+      <button class="btn btn-ghost"  id="btnLog"     title="Ver logs">⚙ Logs</button>
+    </div>
+  </header>
+
+  <!-- ── Info bar ──────────────────────────────────────────── -->
+  <div class="infobar">
+    <span id="infoTimestamp">—</span>
+    <span class="sep">|</span>
+    <span id="infoCount">0 raids</span>
+    <span class="sep">|</span>
+    <span id="infoNext">Próximo refresco: —</span>
+    <span class="spacer"></span>
+    <input type="text" id="filterInput" placeholder="🔍  Buscar..." spellcheck="false" />
+  </div>
+
+  <!-- ── Filter bar ────────────────────────────────────────── -->
+  <div class="filterbar" id="filterbar">
+    <label class="filter-check" title="Muestra solo raids que aún no comenzaron (horario EST)">
+      <input type="checkbox" id="fFuturos" />
+      <span>Solo futuros</span>
+    </label>
+    <span class="filter-sep"></span>
+    <label class="filter-label">Dificultad
+      <select id="fDifficulty"><option value="">Todas</option></select>
+    </label>
+    <label class="filter-label">Tipo
+      <select id="fTipo"><option value="">Todos</option></select>
+    </label>
+    <label class="filter-label">Loot
+      <select id="fLoot"><option value="">Todos</option></select>
+    </label>
+    <label class="filter-label">Lock
+      <select id="fLock"><option value="">Todos</option></select>
+    </label>
+    <label class="filter-label">Raids
+      <select id="fRaids"><option value="">Todas</option></select>
+    </label>
+    <label class="filter-check">
+      <input type="checkbox" id="fDescuento" />
+      <span>Con descuento</span>
+    </label>
+    <span class="spacer"></span>
+    <button class="btn btn-ghost btn-xs" id="btnResetFilters">✕ Reset</button>
+  </div>
+
+  <!-- ── Table ─────────────────────────────────────────────── -->
+  <main class="table-wrap">
+    <table id="raidsTable">
+      <thead>
+        <tr>
+          <th data-col="date">Fecha</th>
+          <th data-col="time">Hora</th>
+          <th data-col="team">Equipo</th>
+          <th data-col="bookings" class="center">Books</th>
+          <th data-col="difficulty" class="center">Dif.</th>
+          <th data-col="type">Tipo</th>
+          <th data-col="loot">Loot</th>
+          <th data-col="discount">Descuento</th>
+          <th data-col="lock">Lock</th>
+          <th data-col="raids" class="wide">Raids</th>
+          <th data-col="notes" class="wide">Notas</th>
+        </tr>
+      </thead>
+      <tbody id="raidsBody">
+        <tr class="placeholder">
+          <td colspan="11">
+            <div class="placeholder-inner">
+              <p>Presiona <strong>Start</strong> para iniciar el scraper,<br>o espera a que <code>raids.json</code> se actualice.</p>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- ── Log panel ─────────────────────────────────────────── -->
+  <aside class="log-panel" id="logPanel">
+    <div class="log-header">
+      <span>Scraper output</span>
+      <button class="log-clear" id="btnLogClear">Limpiar</button>
+    </div>
+    <pre id="logContent"></pre>
+  </aside>
+
+  <!-- ── Legend ────────────────────────────────────────────── -->
+  <footer class="legend">
+    <span class="badge heroic">Heroic</span>
+    <span class="badge normal">Normal</span>
+    <span class="badge full">Full</span>
+    <span class="badge other">Otro</span>
+  </footer>
+
+  <script type="module" src="renderer.js"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+# Datos en tiempo real (se generan al correr el scraper)
+raids.json
+prices.json
+schedule.json
+refresh.flag
+
+# Token sensible
+bakers_token.txt
+
+# Node
+electron/node_modules/
+electron/dist/
+electron/out/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Claude Code
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
