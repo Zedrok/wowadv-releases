@@ -2,7 +2,7 @@
   "name": "bakers-raid-monitor",
   "version": "1.0.0",
   "description": "Live monitor for thebakers.work raids",
-  "main": "out/main/index.js",
+  "main": "out/main/index-modular.js",
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
