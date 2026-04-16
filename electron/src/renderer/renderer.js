@@ -1,7 +1,11 @@
+/* ── Import storage helpers ────────────────────────────────── */
+import { saveFilters, loadFilters, loadFavorites, saveFavorites, toggleFavorite } from './storage.js'
+
 /* ── State ─────────────────────────────────────────────────── */
 let allRows  = []
 let prevMap  = {}
 let scraperOn = false
+let favorites = []
 
 let filterText = ''
 let sortCol    = null
@@ -206,7 +210,7 @@ function renderTable() {
   if (!rows.length) {
     tbody.innerHTML = `
       <tr class="placeholder">
-        <td colspan="11">
+        <td colspan="12">
           <div class="placeholder-inner">
             <p>Sin resultados para los filtros actuales.</p>
           </div>
@@ -221,9 +225,12 @@ function renderTable() {
     const rowCls = full ? 'row-full' : `row-${diff}`
     const key    = rowKey(r)
     const flash  = flashMap[key] || ''
+    const isFav  = favorites.includes(key)
+    const favStar = isFav ? '⭐' : '☆'
 
     return `
-      <tr class="${rowCls} ${flash}" data-key="${esc(key)}"${r.url ? ` data-url="${esc(r.url)}" style="cursor:pointer" title="Abrir en navegador"` : ''}>
+      <tr class="${rowCls} ${flash}${isFav ? ' row-favorite' : ''}" data-key="${esc(key)}"${r.url ? ` data-url="${esc(r.url)}"` : ''}>
+        <td class="fav-col"><button class="btn-fav" data-key="${esc(key)}" title="Marcar/desmarcar favorito">${favStar}</button></td>
         <td>${esc(r.date)}</td>
         <td>${esc(r.time)}</td>
         <td>${esc(r.team)}</td>
@@ -239,6 +246,26 @@ function renderTable() {
   }).join('')
 
   tbody.innerHTML = html
+
+  // Attach event listeners para botones de favoritos
+  tbody.querySelectorAll('.btn-fav').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const key = btn.dataset.key
+      const isFav = toggleFavorite(key)
+      favorites = loadFavorites()
+      renderTable()
+    })
+  })
+
+  // Attach event listeners para clickear en fila (abrir URL)
+  tbody.querySelectorAll('tr[data-url]').forEach(tr => {
+    tr.style.cursor = 'pointer'
+    tr.title = 'Abrir en navegador'
+    tr.addEventListener('click', () => {
+      window.api.openUrl(tr.dataset.url)
+    })
+  })
 
   setTimeout(() => {
     Object.keys(flashMap).forEach(k => delete flashMap[k])
@@ -327,11 +354,6 @@ window.api.onShowLogs(() => {
 
 /* ── Buttons ───────────────────────────────────────────────── */
 
-tbody.addEventListener('click', e => {
-  const tr = e.target.closest('tr[data-url]')
-  if (tr) window.api.openUrl(tr.dataset.url)
-})
-
 btnStart.addEventListener('click',    () => window.api.startScraper())
 btnStop .addEventListener('click',    () => window.api.stopScraper())
 document.getElementById('btnNextRuns').addEventListener('click', () => window.api.openNextRuns())
@@ -351,18 +373,33 @@ btnLog.addEventListener('click', () => {
 
 /* ── Filter controls ───────────────────────────────────────── */
 
+function updateFiltersUI() {
+  fFuturos.checked   = filters.soloFuturos
+  fDifficulty.value  = filters.difficulty
+  fTipo.value        = filters.tipo
+  fLoot.value        = filters.loot
+  fLock.value        = filters.lock
+  fRaids.value       = filters.raids
+  fDescuento.checked = filters.soloDescuento
+}
+
+function onFiltersChanged() {
+  saveFilters(filters)
+  renderTable()
+}
+
 filterInput.addEventListener('input', () => {
   filterText = filterInput.value.trim()
   renderTable()
 })
 
-fFuturos.addEventListener('change',   () => { filters.soloFuturos   = fFuturos.checked;    renderTable() })
-fDifficulty.addEventListener('change',() => { filters.difficulty    = fDifficulty.value;   renderTable() })
-fTipo.addEventListener('change',      () => { filters.tipo          = fTipo.value;         renderTable() })
-fLoot.addEventListener('change',      () => { filters.loot          = fLoot.value;         renderTable() })
-fLock.addEventListener('change',      () => { filters.lock          = fLock.value;         renderTable() })
-fRaids.addEventListener('change',     () => { filters.raids         = fRaids.value;        renderTable() })
-fDescuento.addEventListener('change', () => { filters.soloDescuento = fDescuento.checked;  renderTable() })
+fFuturos.addEventListener('change',   () => { filters.soloFuturos   = fFuturos.checked;    onFiltersChanged() })
+fDifficulty.addEventListener('change',() => { filters.difficulty    = fDifficulty.value;   onFiltersChanged() })
+fTipo.addEventListener('change',      () => { filters.tipo          = fTipo.value;         onFiltersChanged() })
+fLoot.addEventListener('change',      () => { filters.loot          = fLoot.value;         onFiltersChanged() })
+fLock.addEventListener('change',      () => { filters.lock          = fLock.value;         onFiltersChanged() })
+fRaids.addEventListener('change',     () => { filters.raids         = fRaids.value;        onFiltersChanged() })
+fDescuento.addEventListener('change', () => { filters.soloDescuento = fDescuento.checked;  onFiltersChanged() })
 
 btnReset.addEventListener('click', () => {
   filterText = ''
@@ -370,14 +407,8 @@ btnReset.addEventListener('click', () => {
   Object.keys(filters).forEach(k => {
     filters[k] = typeof filters[k] === 'boolean' ? false : ''
   })
-  fFuturos.checked   = false
-  fDifficulty.value  = ''
-  fTipo.value        = ''
-  fLoot.value        = ''
-  fLock.value        = ''
-  fRaids.value       = ''
-  fDescuento.checked = false
-  renderTable()
+  updateFiltersUI()
+  onFiltersChanged()
 })
 
 /* ── Sort by column header ─────────────────────────────────── */
@@ -394,6 +425,16 @@ document.querySelectorAll('th[data-col]').forEach(th => {
 })
 
 /* ── Init ──────────────────────────────────────────────────── */
+
+// Cargar filtros guardados
+const savedFilters = loadFilters()
+if (savedFilters) {
+  Object.assign(filters, savedFilters)
+  updateFiltersUI()
+}
+
+// Cargar favoritos
+favorites = loadFavorites()
 
 window.api.isRunning().then(running => {
   scraperOn = running

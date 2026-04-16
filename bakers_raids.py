@@ -13,13 +13,14 @@ from playwright.sync_api import sync_playwright
 URL_HOME   = "https://www.thebakers.work/home"
 URL_RAIDS  = "https://www.thebakers.work/bookings-na/raids"
 CALLBACK   = "https://www.thebakers.work/login/callback"
-API_BASE      = "thebakers-backend.onrender.com/v1/run"
-API_SERVICES  = "thebakers-backend.onrender.com/v1/services"
-TOKEN_FILE    = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bakers_token.txt")
-RAIDS_JSON          = os.path.join(os.path.dirname(os.path.abspath(__file__)), "raids.json")
-PRICES_JSON         = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prices.json")
-OPEN_URL_FLAG       = os.path.join(os.path.dirname(os.path.abspath(__file__)), "open_url.flag")
-REFRESH_PRICES_FLAG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "refresh_prices.flag")
+API_BASE      = "thebakers-backend-2.onrender.com/v1/run"
+API_SERVICES  = "thebakers-backend-2.onrender.com/v1/services"
+_DATA_DIR = os.environ.get("BAKERS_DATA_DIR") or os.path.dirname(os.path.abspath(__file__))
+TOKEN_FILE          = os.path.join(_DATA_DIR, "bakers_token.txt")
+RAIDS_JSON          = os.path.join(_DATA_DIR, "raids.json")
+PRICES_JSON         = os.path.join(_DATA_DIR, "prices.json")
+OPEN_URL_FLAG       = os.path.join(_DATA_DIR, "open_url.flag")
+REFRESH_PRICES_FLAG = os.path.join(_DATA_DIR, "refresh_prices.flag")
 
 STEALTH_SCRIPT = """
     Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
@@ -170,8 +171,15 @@ def main():
 
         # Navegar a raids
         print(f"Navegando a {URL_RAIDS} ...")
-        page.goto(URL_RAIDS, wait_until="domcontentloaded")
-        page.wait_for_selector("tbody tr", timeout=15000)
+        page.goto(URL_RAIDS, wait_until="networkidle")
+        # Esperar a que la tabla se renderice (puede tomar tiempo con los datos de la API)
+        try:
+            page.wait_for_selector("tbody tr", timeout=30000)
+        except Exception as e:
+            print(f"\n⚠️  Error esperando tabla: {e}")
+            print(f"URL actual: {page.url}")
+            print(f"Contenido de la página (primeros 500 chars):\n{page.content()[:500]}\n")
+            raise
 
         print("Listo. Escuchando actualizaciones en tiempo real. Ctrl+C para salir.\n")
 

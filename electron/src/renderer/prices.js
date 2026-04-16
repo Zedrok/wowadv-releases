@@ -8,19 +8,18 @@ function esc(s) {
 }
 
 // ---------------------------------------------------------------------------
-// Favorite Lists — stored in localStorage
+// Favorite Lists — stored in userData via IPC (persiste entre builds)
 // Structure: [{ id: string, name: string, serviceIds: number[] }]
 // ---------------------------------------------------------------------------
-const LISTS_KEY = 'prices_fav_lists'
+let favLists = []
 
-function loadLists() {
-  try { return JSON.parse(localStorage.getItem(LISTS_KEY) || '[]') } catch { return [] }
+async function loadLists() {
+  favLists = await window.api.getFavLists()
 }
 function saveLists(lists) {
-  localStorage.setItem(LISTS_KEY, JSON.stringify(lists))
+  favLists = lists
+  window.api.saveFavLists(lists)
 }
-
-let favLists = loadLists()
 
 function getList(id)       { return favLists.find(l => l.id === id) }
 function listHas(id, svcId) { return !!getList(id)?.serviceIds.includes(svcId) }
@@ -220,7 +219,25 @@ function render() {
 
   let html = ''
 
-  // ── Favorite lists (pinned, in user order) ──
+  // ── Tab: Actualizados recientemente ──
+  if (currentTab === 'recent') {
+    const recent = filtered
+      .filter(s => fmtUpdatedAt(s.updatedAt).cls === 'upd-fresh')
+      .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+    if (recent.length) {
+      html = `<div class="recent-list">${recent.map(s => {
+        const row = buildServiceRow(s)
+        return row.replace('class="svc-row', 'class="svc-row recent-highlight')
+      }).join('')}</div>`
+    } else {
+      html = '<p class="placeholder">Sin servicios actualizados en las últimas 24 horas.</p>'
+    }
+    document.getElementById('content').innerHTML = html
+    attachContentListeners()
+    return
+  }
+
+  // ── Tab: Todos ──
   for (const list of favLists) {
     const items = filtered.filter(s => list.serviceIds.includes(s.id))
     html += buildFavListAccordion(list, items)
@@ -235,7 +252,10 @@ function render() {
 
   if (!html) html = '<p class="placeholder">Sin resultados.</p>'
   document.getElementById('content').innerHTML = html
+  attachContentListeners()
+}
 
+function attachContentListeners() {
   // ── Accordion toggle ──
   document.querySelectorAll('.acc-header').forEach(header => {
     header.addEventListener('click', e => {
@@ -355,6 +375,16 @@ document.getElementById('btnRefresh').addEventListener('click', async () => {
   btn.disabled = false
 })
 
+let currentTab = 'all'
+
+document.getElementById('tabs').addEventListener('click', e => {
+  const tab = e.target.closest('.tab')
+  if (!tab) return
+  currentTab = tab.dataset.tab
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === currentTab))
+  render()
+})
+
 document.getElementById('searchInput').addEventListener('input', render)
 
 // Tooltip positioning — flip upward when near bottom of viewport
@@ -383,4 +413,8 @@ document.querySelector('.content').addEventListener('mouseout', e => {
 
 window.api.onPricesData(data => { payload = data; render() })
 
-window.api.getPrices().then(data => { payload = data; render() })
+// Cargar listas y precios antes del primer render
+Promise.all([loadLists(), window.api.getPrices()]).then(([, data]) => {
+  payload = data
+  render()
+})

@@ -7,11 +7,12 @@ const IS_DEV = process.env.NODE_ENV === 'development'
 
 // ROOT apunta a wow-advertising/ (parent del directorio electron/)
 const ROOT          = path.join(app.getAppPath(), '..')
-const RAIDS_JSON          = path.join(ROOT, 'raids.json')
-const PRICES_JSON         = path.join(ROOT, 'prices.json')
-const FLAG_FILE           = path.join(ROOT, 'refresh.flag')
-const OPEN_URL_FLAG       = path.join(ROOT, 'open_url.flag')
-const REFRESH_PRICES_FLAG = path.join(ROOT, 'refresh_prices.flag')
+const DATA_DIR      = app.getPath('userData')
+const RAIDS_JSON          = path.join(DATA_DIR, 'raids.json')
+const PRICES_JSON         = path.join(DATA_DIR, 'prices.json')
+const FLAG_FILE           = path.join(DATA_DIR, 'refresh.flag')
+const OPEN_URL_FLAG       = path.join(DATA_DIR, 'open_url.flag')
+const REFRESH_PRICES_FLAG = path.join(DATA_DIR, 'refresh_prices.flag')
 const PYTHON_SCRIPT = path.join(ROOT, 'bakers_raids.py')
 
 let win         = null
@@ -26,6 +27,8 @@ let pricesWin   = null
 // ---------------------------------------------------------------------------
 function openNextRunsWindow() {
   if (nextRunsWin && !nextRunsWin.isDestroyed()) {
+    if (nextRunsWin.isMinimized()) nextRunsWin.restore()
+    nextRunsWin.show()
     nextRunsWin.focus()
     return
   }
@@ -208,6 +211,7 @@ function launchScraper(pythonCmd) {
   scraper = spawn(pythonCmd, [PYTHON_SCRIPT], {
     cwd:   ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
+    env:   { ...process.env, BAKERS_DATA_DIR: app.getPath('userData') },
   })
 
   scraper.stdout.on('data', d => sendToRenderer('scraper-log', d.toString()))
@@ -267,7 +271,7 @@ function watchPrices() {
 function loadAndSendPrices() {
   try {
     const json = JSON.parse(fs.readFileSync(PRICES_JSON, 'utf8'))
-    if (pricesWin && !pricesWin.isDestroyed()) pricesWin.webContents.send('prices-data', json)
+    broadcastEvent('prices-data', json)
   } catch (_) {}
 }
 
@@ -275,7 +279,13 @@ function loadAndSend() {
   try {
     const raw  = fs.readFileSync(RAIDS_JSON, 'utf8')
     const json = JSON.parse(raw)
-    if (json.data && Array.isArray(json.data)) sendToRenderer('raids-data', json)
+    if (json.data && Array.isArray(json.data)) {
+      const payload = {
+        ...json,
+        timestamp: new Date().toLocaleString('es-ES')
+      }
+      broadcastEvent('raids-data', payload)
+    }
   } catch (_) {}
 }
 
@@ -305,6 +315,14 @@ ipcMain.handle('get-prices', () => {
   try { return JSON.parse(fs.readFileSync(PRICES_JSON, 'utf8')) } catch (_) { return { services: [], categories: [] } }
 })
 
+const FAV_LISTS_FILE = path.join(DATA_DIR, 'fav_lists.json')
+ipcMain.handle('get-fav-lists', () => {
+  try { return JSON.parse(fs.readFileSync(FAV_LISTS_FILE, 'utf8')) } catch (_) { return [] }
+})
+ipcMain.on('save-fav-lists', (_e, lists) => {
+  try { fs.writeFileSync(FAV_LISTS_FILE, JSON.stringify(lists)) } catch (_) {}
+})
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -312,6 +330,16 @@ function sendToRenderer(channel, payload) {
   if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
   if (channel === 'raids-data' && nextRunsWin && !nextRunsWin.isDestroyed())
     nextRunsWin.webContents.send(channel, payload)
+}
+
+/**
+ * Broadcast event a TODAS las ventanas relevantes (main + popup + prices)
+ */
+function broadcastEvent(channel, payload) {
+  if (win && !win.isDestroyed()) win.webContents.send(channel, payload)
+  if (nextRunsWin && !nextRunsWin.isDestroyed()) nextRunsWin.webContents.send(channel, payload)
+  if (channel === 'prices-data' && pricesWin && !pricesWin.isDestroyed())
+    pricesWin.webContents.send(channel, payload)
 }
 
 // ---------------------------------------------------------------------------

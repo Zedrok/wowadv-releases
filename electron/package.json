@@ -7,7 +7,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "dist": "electron-vite build && electron-packager . \"Bakers Raid Monitor\" --platform=win32 --arch=x64 --out=dist --overwrite --extra-resource=../bakers_raids.py"
+    "dist": "electron-vite build && electron-builder --win portable --publish=never"
   },
   "build": {
     "appId": "com.bakers.raid-monitor",

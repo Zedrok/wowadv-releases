@@ -6,6 +6,7 @@
   <title>Precios</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { user-select: none; -webkit-user-select: none; cursor: default; }
     :root {
       --bg:       #0d0d14;
       --bg2:      #13131f;
@@ -227,6 +228,26 @@
       text-align: center; color: var(--text-dim);
       padding: 40px 0; font-size: 13px;
     }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg2); flex-shrink: 0;
+    }
+    .tab {
+      padding: 7px 14px; font-size: 11px; font-weight: 600;
+      color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; letter-spacing: 0.02em;
+      transition: color 0.15s, border-color 0.15s;
+      user-select: none;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+
+    /* Servicios recientes */
+    .recent-list { display: flex; flex-direction: column; }
+    .svc-row.recent-highlight .svc-name { color: #4caf50; }
   </style>
 </head>
 <body>
@@ -240,6 +261,10 @@
     <input type="text" id="searchInput" placeholder="Buscar servicio…" />
     <button class="btn-new-list" id="btnNewList" title="Nueva lista de favoritos">＋</button>
     <button class="btn-refresh"  id="btnRefresh">⟳ Actualizar</button>
+  </div>
+  <div class="tabs" id="tabs">
+    <span class="tab" id="tabRecent" data-tab="recent">⚡ Actualizados recientemente</span>
+    <span class="tab active" id="tabAll" data-tab="all">Todos</span>
   </div>
   <div class="new-list-bar" id="newListBar" style="display:none">
     <input type="text" id="newListInput" placeholder="Nombre de la lista…" maxlength="40" />

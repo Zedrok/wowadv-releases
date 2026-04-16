@@ -1,0 +1,21 @@
+appId: com.bakers.raid-monitor
+productName: Bakers Raid Monitor
+directories:
+  buildResources: resources
+  output: dist
+asar: false
+files:
+  - out/**/*
+extraResources:
+  - from: ../bakers_raids.py
+    to: bakers_raids.py
+win:
+  target:
+    - portable
+  certificateFile: null
+  certificatePassword: null
+win:
+  signingHashAlgorithms:
+    - sha256
+portable:
+  artifactName: Bakers Raid Monitor.exe

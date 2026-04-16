@@ -416,3 +416,29 @@ tr.flash-upd { animation: flashUpd 1s ease; }
 ::-webkit-scrollbar-track        { background: var(--bg); }
 ::-webkit-scrollbar-thumb        { background: #2a2a4a; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover  { background: #3a3a5a; }
+
+/* ── Favorites ───────────────────────────────────────────────── */
+.fav-col {
+  width: 30px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.btn-fav {
+  background: none;
+  border: none;
+  color: var(--gold);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px;
+  transition: all 0.2s;
+}
+
+.btn-fav:hover {
+  transform: scale(1.1);
+  color: #ffd700;
+}
+
+.row-favorite {
+  background-color: rgba(200, 168, 75, 0.05) !important;
+}
