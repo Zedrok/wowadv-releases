@@ -2,7 +2,13 @@ import { defineConfig } from 'electron-vite'
 import { resolve } from 'path'
 
 export default defineConfig({
-  main: {},
+  main: {
+    build: {
+      rollupOptions: {
+        input: resolve(__dirname, 'src/main/index-modular.js')
+      }
+    }
+  },
   preload: {
     build: {
       rollupOptions: {
