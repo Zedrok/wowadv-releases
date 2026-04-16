@@ -18,7 +18,11 @@ contextBridge.exposeInMainWorld('api', {
   getFavLists:    () => ipcRenderer.invoke('get-fav-lists'),
   saveFavLists:   (lists) => ipcRenderer.send('save-fav-lists', lists),
 
+  getAppVersion:  () => ipcRenderer.invoke('get-app-version'),
+  checkForUpdates:() => ipcRenderer.invoke('check-for-updates'),
+
   onRaidsData:    (cb) => ipcRenderer.on('raids-data',      (_, d) => cb(d)),
+  onUpdateProgress:(cb) => ipcRenderer.on('update-progress', (_, d) => cb(d)),
   onPricesData:   (cb) => ipcRenderer.on('prices-data',     (_, d) => cb(d)),
   onScraperStatus:(cb) => ipcRenderer.on('scraper-status',  (_, d) => cb(d)),
   onScraperLog:   (cb) => ipcRenderer.on('scraper-log',     (_, d) => cb(d)),
