@@ -2,15 +2,16 @@ import { parseRaidToDate } from '../../utils/helpers.js'
 import { saveFilters, loadFilters } from '../../storage.js'
 
 export const filters = {
-  soloFuturos:     true,
-  difficulty:      '',
-  tipo:            '',
-  loot:            '',
-  lock:            'Unlocked',
-  raids:           '',
-  team:            '',
-  soloDisponibles: true,
-  soloDescuento:   false,
+  mostrarAnteriores: false,
+  difficulty:        '',
+  tipo:              '',
+  loot:              '',
+  lock:              'Unlocked',
+  raids:             '',
+  team:              '',
+  day:               '',
+  soloDisponibles:   true,
+  soloDescuento:     false,
 }
 
 export let filterText = ''
@@ -36,17 +37,21 @@ export function applyFilter(rows) {
       const q = filterText.toLowerCase()
       if (!Object.values(r).some(v => String(v).toLowerCase().includes(q))) return false
     }
-    if (filters.soloFuturos) {
+    // Si NO está marcado "Mostrar Anteriores", solo muestra raids futuras
+    if (!filters.mostrarAnteriores) {
       const raidDate = parseRaidToDate(r.date, r.time)
       if (!raidDate || raidDate <= now) return false
     }
+    if (filters.day && r.date !== filters.day) return false
     if (filters.difficulty && r.difficulty !== filters.difficulty) return false
     if (filters.tipo && r.type !== filters.tipo) return false
     if (filters.loot && r.loot !== filters.loot) return false
-    if (filters.lock && r.lock !== filters.lock) return false
+    // Si "Mostrar Anteriores" está activo, ignora el filtro de lock (muestra todo)
+    if (!filters.mostrarAnteriores && filters.lock && r.lock !== filters.lock) return false
     if (filters.raids && !r.raids.toLowerCase().includes(filters.raids.toLowerCase())) return false
     if (filters.team && r.team !== filters.team) return false
-    if (filters.soloDisponibles) {
+    // Si "Mostrar Anteriores" está activo, ignora el filtro de disponibilidad (muestra todo)
+    if (!filters.mostrarAnteriores && filters.soloDisponibles) {
       const [used, total] = (r.bookings || '').split('/').map(Number)
       if (isNaN(used) || isNaN(total) || used >= total) return false
     }
@@ -56,6 +61,7 @@ export function applyFilter(rows) {
 }
 
 export function populateDropdowns(rows) {
+  const fDay = document.getElementById('fDay')
   const fDifficulty = document.getElementById('fDifficulty')
   const fTipo = document.getElementById('fTipo')
   const fLoot = document.getElementById('fLoot')
@@ -63,6 +69,7 @@ export function populateDropdowns(rows) {
   const fRaids = document.getElementById('fRaids')
   const fTeam = document.getElementById('fTeam')
 
+  populateSelect(fDay, rows.map(r => r.date), filters.day)
   populateSelect(fDifficulty, rows.map(r => r.difficulty), filters.difficulty)
   populateSelect(fTipo, rows.map(r => r.type), filters.tipo)
   populateSelect(fLoot, rows.map(r => r.loot), filters.loot)
@@ -92,7 +99,8 @@ function populateSelect(el, values, current) {
 }
 
 export function updateFilterUI() {
-  const fFuturos = document.getElementById('fFuturos')
+  const fAnteriores = document.getElementById('fAnteriores')
+  const fDay = document.getElementById('fDay')
   const fDifficulty = document.getElementById('fDifficulty')
   const fTipo = document.getElementById('fTipo')
   const fLoot = document.getElementById('fLoot')
@@ -100,11 +108,25 @@ export function updateFilterUI() {
   const fRaids = document.getElementById('fRaids')
   const fDescuento = document.getElementById('fDescuento')
 
-  fFuturos.checked   = filters.soloFuturos
+  fAnteriores.checked = filters.mostrarAnteriores
+  fDay.value         = filters.day
   fDifficulty.value  = filters.difficulty
   fTipo.value        = filters.tipo
   fLoot.value        = filters.loot
-  fLock.checked      = filters.lock === 'Unlocked'
+
+  // Update lock checkbox and icon
+  const isUnlocked = filters.lock === 'Unlocked'
+  fLock.checked = isUnlocked
+  const lockIcon = document.getElementById('lockIcon')
+  const lockText = document.getElementById('lockText')
+  if (isUnlocked) {
+    lockIcon.className = 'fa-solid fa-lock-open'
+    lockText.textContent = 'Unlocked'
+  } else {
+    lockIcon.className = 'fa-solid fa-lock'
+    lockText.textContent = 'Locked'
+  }
+
   fRaids.value       = filters.raids
   document.getElementById('fTeam').value            = filters.team
   document.getElementById('fDisponibles').checked   = filters.soloDisponibles
@@ -112,13 +134,14 @@ export function updateFilterUI() {
 }
 
 export function resetFilters() {
-  filters.soloFuturos = true
+  filters.mostrarAnteriores = false
   filters.difficulty = ''
   filters.tipo = ''
   filters.loot = ''
   filters.lock = 'Unlocked'
   filters.raids = ''
   filters.team = ''
+  filters.day = ''
   filters.soloDisponibles = true
   filters.soloDescuento = false
   document.getElementById('filterInput').value = ''

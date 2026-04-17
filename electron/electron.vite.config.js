@@ -11,7 +11,8 @@ export default defineConfig({
           'modules/scraper/scraper': resolve(__dirname, 'src/main/modules/scraper/scraper.js'),
           'modules/watcher/watcher': resolve(__dirname, 'src/main/modules/watcher/watcher.js'),
           'modules/updater/updater': resolve(__dirname, 'src/main/modules/updater/updater.js'),
-          'modules/ipc/handlers': resolve(__dirname, 'src/main/modules/ipc/handlers.js')
+          'modules/ipc/handlers': resolve(__dirname, 'src/main/modules/ipc/handlers.js'),
+          'modules/tray/tray': resolve(__dirname, 'src/main/modules/tray/tray.js')
         },
         preserveModules: true,
         preserveModulesRoot: resolve(__dirname, 'src/main')

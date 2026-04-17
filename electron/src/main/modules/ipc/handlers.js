@@ -39,11 +39,8 @@ function registerHandlers(config) {
   })
   ipcMain.on('open-url', (_, url) => {
     if (!url || !url.startsWith('http')) return
-    if (scraperModule.isRunning()) {
-      try { fs.writeFileSync(config.openUrlFlag, url) } catch (_) {}
-    } else {
-      shell.openExternal(url)
-    }
+    console.log('[IPC] Opening URL in default browser:', url)
+    shell.openExternal(url)
   })
 
   // Favorites

@@ -4,6 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Baker's Raid Monitor</title>
+
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../assets/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="../assets/favicon-16x16.png" />
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png" />
+  <link rel="manifest" href="../assets/site.webmanifest" />
+
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
   <link rel="stylesheet" href="style-new.css" />
 </head>
@@ -42,17 +50,21 @@
     <!-- ── Filter bar ── -->
     <div class="filterbar" id="filterbar">
       <!-- Basic filters row -->
-      <label class="filter-check" title="Muestra solo raids que aún no comenzaron (horario EST)">
-        <input type="checkbox" id="fFuturos" />
-        <span>Solo futuros</span>
+      <label class="filter-check" title="Incluye raids que ya ocurrieron">
+        <input type="checkbox" id="fAnteriores" />
+        <span>Mostrar Anteriores</span>
+      </label>
+      <label class="filter-label">Día
+        <select id="fDay"><option value="">Todos</option></select>
       </label>
       <label class="filter-check">
         <input type="checkbox" id="fDisponibles" />
         <span>Con espacio</span>
       </label>
-      <label class="filter-check">
-        <input type="checkbox" id="fLock" />
-        <span>Unlocked</span>
+      <label class="filter-check" id="lockLabel">
+        <i class="fa-solid fa-lock-open" id="lockIcon"></i>
+        <span id="lockText">Unlocked</span>
+        <input type="checkbox" id="fLock" style="display:none" />
       </label>
       <span class="filter-sep"></span>
       <label class="filter-label">Dificultad

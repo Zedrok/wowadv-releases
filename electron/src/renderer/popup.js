@@ -266,18 +266,32 @@ async function render() {
   document.getElementById('lastUpdate').textContent =
     payload?.timestamp ? `Actualizado: ${payload.timestamp}` : '—'
 
-  // Filtrar: unlocked + búsqueda + solo hoy
+  // Filtrar: búsqueda + filtros
   const GRACE_MS = 5 * 60 * 1000
   const todayStr = `${now.getMonth() + 1}`.padStart(2, '0') + '/' + `${now.getDate()}`.padStart(2, '0')
   const searchQ = searchText.trim().toLowerCase()
-  const showPast = document.getElementById('chkPast').checked
+  const mostrarAnteriores = document.getElementById('chkPast').checked
+  const soloDisponibles = document.getElementById('chkFull') ? !document.getElementById('chkFull').checked : true
 
   const allFiltered = allRows.filter(r => {
-    const isUnlocked = r.lock.toLowerCase().includes('unlocked')
-    if (!isUnlocked) return false
-    // Solo hoy
-    const datePart = (r.date || '').split(' ')[1] || ''
-    if (datePart !== todayStr) return false
+    // Si NO está marcado "Mostrar Anteriores", solo muestra runs de hoy y futuros
+    if (!mostrarAnteriores) {
+      const datePart = (r.date || '').split(' ')[1] || ''
+      if (datePart !== todayStr) return false
+    }
+
+    // Si "Mostrar Anteriores" está activo, ignora los filtros de lock y disponibilidad (muestra todo)
+    if (!mostrarAnteriores) {
+      const isUnlocked = r.lock.toLowerCase().includes('unlocked')
+      if (!isUnlocked) return false
+
+      // Si "Mostrar Anteriores" NO está activo, filtra por disponibilidad
+      if (soloDisponibles) {
+        const [used, total] = (r.bookings || '').split('/').map(Number)
+        if (isNaN(used) || isNaN(total) || used >= total) return false
+      }
+    }
+
     // Búsqueda por texto en: equipo, raids, horario, dificultad, loot, notas
     if (searchQ) {
       const searchableText = `${r.team} ${r.time} ${r.raids} ${r.difficulty} ${r.loot} ${r.notes}`.toLowerCase()

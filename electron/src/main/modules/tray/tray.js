@@ -4,13 +4,18 @@ const path = require('path')
 let tray = null
 
 function createTray(windows) {
-  // Try to use custom icon, fallback to app icon if not found
-  const iconPath = path.join(app.getAppPath(), 'assets', 'tray-icon.png')
+  // Use 32x32 PNG for tray (standard size for Windows tray)
+  const appPath = app.getAppPath()
+  const iconPath = path.join(appPath, 'assets', 'favicon-32x32.png')
+  console.log('[Tray] appPath:', appPath)
+  console.log('[Tray] iconPath:', iconPath)
+
   try {
     tray = new Tray(iconPath)
-  } catch (_) {
-    // Fallback: let Electron use default
-    tray = new Tray(path.join(app.getAppPath(), 'assets', 'icon.png'))
+    console.log('[Tray] ✓ Tray created successfully')
+  } catch (err) {
+    console.error('[Tray] ✗ Error creating tray:', err.message)
+    throw err
   }
 
   const contextMenu = Menu.buildFromTemplate([
@@ -29,7 +34,13 @@ function createTray(windows) {
     { label: 'Open Prices', click: () => windows.openPrices() },
     { label: 'Open Next Runs', click: () => windows.openNextRuns() },
     { type: 'separator' },
-    { label: 'Quit', click: () => app.quit() }
+    {
+      label: 'Quit',
+      click: () => {
+        console.log('[Tray] Quit clicked, closing app...')
+        app.quit()
+      }
+    }
   ])
 
   tray.setContextMenu(contextMenu)
@@ -55,7 +66,13 @@ function createTray(windows) {
       { label: 'Open Prices', click: () => windows.openPrices() },
       { label: 'Open Next Runs', click: () => windows.openNextRuns() },
       { type: 'separator' },
-      { label: 'Quit', click: () => app.quit() }
+      {
+        label: 'Quit',
+        click: () => {
+          console.log('[Tray] Quit clicked from show menu')
+          app.quit()
+        }
+      }
     ])
     tray.setContextMenu(newMenu)
   })
@@ -73,7 +90,13 @@ function createTray(windows) {
       { label: 'Open Prices', click: () => windows.openPrices() },
       { label: 'Open Next Runs', click: () => windows.openNextRuns() },
       { type: 'separator' },
-      { label: 'Quit', click: () => app.quit() }
+      {
+        label: 'Quit',
+        click: () => {
+          console.log('[Tray] Quit clicked from hide menu')
+          app.quit()
+        }
+      }
     ])
     tray.setContextMenu(newMenu)
   })

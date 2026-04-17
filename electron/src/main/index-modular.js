@@ -46,10 +46,7 @@ app.whenReady().then(() => {
   }
   watcherModule.setNextRunsWindow(() => winConfig.main)
 
-  // Setup tray icon
-  createTray(winConfig)
-
-  // Register all IPC handlers
+  // Register all IPC handlers first (tray after)
   registerHandlers({
     scraperModule,
     watcherModule,
@@ -62,6 +59,13 @@ app.whenReady().then(() => {
     raidsPath: RAIDS_JSON,
     pricesPath: PRICES_JSON,
   })
+
+  // Setup tray icon (after IPC handlers registered)
+  try {
+    createTray(winConfig)
+  } catch (e) {
+    console.error('[Tray] Error:', e)
+  }
 
   // Start watchers
   watcherModule.watchRaids(RAIDS_JSON)

@@ -55,18 +55,21 @@ function renderCards(container, rows) {
               <span>${r.type}</span>
             </div>
           </div>
+          <div class="raid-lock">
+            ${r.lock === 'Locked' ? '<i class="fa-solid fa-lock"></i>' : ''}
+          </div>
           <div class="raid-time">
             <div class="raid-time-day">${r.date.split(' ')[0].substring(0, 3)}</div>
             <div class="raid-time-line">${r.time}</div>
+          </div>
+          <div class="raid-status ${status}${isFull ? ' full' : ''}">
+            ${status === 'unsaved' ? 'Unsaved' : status === 'mythic' ? 'Mythic' : 'Saved'}
           </div>
           <div class="raid-slots">
             <div class="raid-slots-text">${r.bookings}</div>
             <div class="raid-slots-bar">
               <div class="raid-slots-bar-fill" style="width: ${fillPercent}%"></div>
             </div>
-          </div>
-          <div class="raid-status ${status}${isFull ? ' full' : ''}">
-            ${status === 'unsaved' ? 'Unsaved' : status === 'mythic' ? 'Mythic' : 'Saved'}
           </div>
           <button class="raid-link-btn" data-url="${r.url || ''}" title="Abrir en navegador">
             <i class="fa-solid fa-external-link-alt"></i>
@@ -84,7 +87,7 @@ function renderCards(container, rows) {
           </div>
           <div class="raid-detail">
             <div class="raid-detail-label">Lock</div>
-            <div class="raid-detail-value">${r.lock}</div>
+            <div class="raid-detail-value">${r.lock === 'Locked' ? '<i class="fa-solid fa-lock"></i>' : '<i class="fa-solid fa-lock-open"></i>'}</div>
           </div>
           ${r.discount.includes('ON') ? `<div class="raid-detail"><div class="raid-detail-badge"><i class="fa-solid fa-tag"></i> Descuento</div></div>` : ''}
           ${r.notes ? `<div class="raid-detail"><div class="raid-detail-label">Notas</div><div class="raid-detail-value">${r.notes}</div></div>` : ''}
@@ -186,14 +189,30 @@ filterInput.addEventListener('input', () => {
   renderPage()
 })
 
-document.getElementById('fFuturos').addEventListener('change', () => {
-  filters.filters.soloFuturos = document.getElementById('fFuturos').checked
+document.getElementById('fAnteriores').addEventListener('change', (e) => {
+  console.log('[Filter] Mostrar Anteriores changed:', e.target.checked)
+  filters.filters.mostrarAnteriores = e.target.checked
+
+  // Disable "Con espacio" and "Unlocked" when showing anteriores
+  const fDisponibles = document.getElementById('fDisponibles')
+  const fLock = document.getElementById('fLock')
+  fDisponibles.disabled = e.target.checked
+  fLock.disabled = e.target.checked
+
+  filters.saveCurrentFilters()
+  renderPage()
+})
+
+document.getElementById('fDay').addEventListener('change', () => {
+  filters.filters.day = document.getElementById('fDay').value
+  console.log('[Filter] Day changed to:', filters.filters.day)
   filters.saveCurrentFilters()
   renderPage()
 })
 
 document.getElementById('fDifficulty').addEventListener('change', () => {
   filters.filters.difficulty = document.getElementById('fDifficulty').value
+  console.log('[Filter] Difficulty changed to:', filters.filters.difficulty)
   filters.saveCurrentFilters()
   renderPage()
 })
@@ -210,8 +229,22 @@ document.getElementById('fLoot').addEventListener('change', () => {
   renderPage()
 })
 
-document.getElementById('fLock').addEventListener('change', () => {
-  filters.filters.lock = document.getElementById('fLock').checked ? 'Unlocked' : ''
+document.getElementById('fLock').addEventListener('change', (e) => {
+  const isUnlocked = e.target.checked
+  filters.filters.lock = isUnlocked ? 'Unlocked' : ''
+
+  // Update icon and text
+  const icon = document.getElementById('lockIcon')
+  const text = document.getElementById('lockText')
+  if (isUnlocked) {
+    icon.className = 'fa-solid fa-lock-open'
+    text.textContent = 'Unlocked'
+  } else {
+    icon.className = 'fa-solid fa-lock'
+    text.textContent = 'Locked'
+  }
+
+  console.log('[Filter] Lock changed to:', filters.filters.lock)
   filters.saveCurrentFilters()
   renderPage()
 })
@@ -228,8 +261,9 @@ document.getElementById('fTeam').addEventListener('change', () => {
   renderPage()
 })
 
-document.getElementById('fDisponibles').addEventListener('change', () => {
-  filters.filters.soloDisponibles = document.getElementById('fDisponibles').checked
+document.getElementById('fDisponibles').addEventListener('change', (e) => {
+  console.log('[Filter] Con Espacio changed:', e.target.checked)
+  filters.filters.soloDisponibles = e.target.checked
   filters.saveCurrentFilters()
   renderPage()
 })
@@ -286,6 +320,12 @@ window.api.isRunning().then(running => {
 
 filters.loadSavedFilters()
 filters.updateFilterUI()
+
+// Disable "Con espacio" and "Unlocked" if "Mostrar Anteriores" is already enabled
+if (filters.filters.mostrarAnteriores) {
+  document.getElementById('fDisponibles').disabled = true
+  document.getElementById('fLock').disabled = true
+}
 
 window.api.requestData()
 console.log('requestData called')
