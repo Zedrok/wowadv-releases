@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <title>Próximos Runs</title>
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="../../assets/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png" />
   <style>
     :root {
       --bg:         #0d0d14;
@@ -133,12 +137,15 @@
     }
 
     .badge {
-      padding: 1px 7px;
-      border-radius: 3px;
-      font-size: 9px;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 10px;
       font-weight: 700;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
+      white-space: nowrap;
+      display: inline-block;
+      line-height: 1;
     }
     .badge-heroic { background: rgba(139,26,26,.5); color: var(--heroic-fg); border: 1px solid var(--heroic-acc); }
     .badge-normal { background: rgba(26,26,122,.5); color: var(--normal-fg); border: 1px solid var(--normal-acc); }
@@ -251,7 +258,7 @@
     }
 
     .card-datetime {
-      font-size: 12px;
+      font-size: 10px;
       font-weight: 700;
       color: var(--gold);
       white-space: nowrap;
