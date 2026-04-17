@@ -49,13 +49,15 @@ function renderCards(container, rows) {
         <div class="raid-header">
           <div class="raid-info">
             <div class="raid-name">${r.raids}</div>
-            <div class="raid-time-day">${r.date.split(' ')[0].substring(0, 3)}</div>
-            <div class="raid-time-line">${r.time}</div>
             <div class="raid-subtitle">
               <span>${r.team}</span>
               <span>•</span>
               <span>${r.type}</span>
             </div>
+          </div>
+          <div class="raid-time">
+            <div class="raid-time-day">${r.date.split(' ')[0].substring(0, 3)}</div>
+            <div class="raid-time-line">${r.time}</div>
           </div>
           <div class="raid-slots">
             <div class="raid-slots-text">${r.bookings}</div>
@@ -91,6 +93,19 @@ function renderCards(container, rows) {
   }).join('')
 
   // Event listeners
+  container.querySelectorAll('.raid-header').forEach(header => {
+    header.addEventListener('click', e => {
+      const isButton = e.target.closest('.raid-expand, .raid-link-btn')
+      if (isButton) return
+
+      const card = header.closest('.raid-card')
+      const details = card.querySelector('.raid-details')
+      const isExpanded = card.classList.contains('expanded')
+      card.classList.toggle('expanded')
+      details.hidden = isExpanded
+    })
+  })
+
   container.querySelectorAll('.raid-expand').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation()
@@ -102,13 +117,13 @@ function renderCards(container, rows) {
     })
   })
 
-    container.querySelectorAll('.raid-link-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation()
-        const url = btn.dataset.url
-        if (url) openUrl(url)
-      })
+  container.querySelectorAll('.raid-link-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation()
+      const url = btn.dataset.url
+      if (url) openUrl(url)
     })
+  })
   } catch (e) {
     console.error('Error in renderCards:', e)
     container.innerHTML = `<div class="empty-state"><p>Error rendering cards: ${e.message}</p></div>`
@@ -163,11 +178,6 @@ window.api.onScraperStatus(({ running, code }) => {
 window.api.onScraperLog(line => {
   logContent.textContent += line
   logContent.scrollTop    = logContent.scrollHeight
-})
-
-window.api.onShowLogs(() => {
-  logPanel.hidden = false
-  document.getElementById('btnLog').style.color = 'var(--gold)'
 })
 
 // ── Filter controls ────────────────────────────────────────────
@@ -244,13 +254,9 @@ document.getElementById('btnToggleAdvanced').addEventListener('click', () => {
 })
 
 // ── Button controls ───────────────────────────────────────────
-document.getElementById('btnStart').addEventListener('click', () => scraper.startScraper())
-document.getElementById('btnStop').addEventListener('click', () => scraper.stopScraper())
+document.getElementById('btnToggleScraper').addEventListener('click', () => scraper.toggleScraper())
 document.getElementById('btnNextRuns').addEventListener('click', () => window.api.openNextRuns())
 document.getElementById('btnPrices').addEventListener('click', () => window.api.openPrices())
-document.getElementById('btnMinimize').addEventListener('click', () => window.api.minimizeWindow())
-document.getElementById('btnMaximize').addEventListener('click', () => window.api.maximizeWindow())
-document.getElementById('btnClose').addEventListener('click', () => window.api.closeWindow())
 
 document.getElementById('btnLog').addEventListener('click', () => {
   logPanel.hidden = !logPanel.hidden
@@ -281,6 +287,5 @@ window.api.isRunning().then(running => {
 filters.loadSavedFilters()
 filters.updateFilterUI()
 
-document.getElementById('btnLog').style.color = 'var(--gold)'
 window.api.requestData()
 console.log('requestData called')

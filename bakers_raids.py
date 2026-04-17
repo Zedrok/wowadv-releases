@@ -170,7 +170,7 @@ def main():
                 print(f"  [API prices] Error: {e}")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(channel="msedge", headless=False)
+        browser = p.chromium.launch(channel="msedge", headless=True)
         context = browser.new_context()
         context.add_init_script(STEALTH_SCRIPT)
         page = context.new_page()

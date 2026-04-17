@@ -1,8 +1,14 @@
 const { spawn, execFileSync } = require('child_process')
+const fs = require('fs')
+const path = require('path')
+const { shell } = require('electron')
 
 let scraper = null
 let mainWindow = null
 let windowsRef = null
+let autoRetryCount = 0
+let maxAutoRetries = 3
+let autoStartPending = false
 
 function setMainWindow(win) {
   mainWindow = win
@@ -98,15 +104,39 @@ function launch(pythonCmd, scriptPath, root, dataDir) {
     sendStatus({ running: false, code: -1 })
     sendShowLogs()
     scraper = null
+    handleAutoRetry(root, dataDir)
   })
   scraper.on('exit', (code, signal) => {
     sendLog(`\n[INFO] Proceso terminado — code=${code} signal=${signal}\n`)
     scraper = null
     sendStatus({ running: false, code })
-    if (code !== 0 && code !== null) sendShowLogs()
+    if (code !== 0 && code !== null) {
+      sendShowLogs()
+      if (autoStartPending) handleAutoRetry(root, dataDir)
+    }
   })
 
   sendStatus({ running: true })
+  autoRetryCount = 0
+}
+
+function handleAutoRetry(root, dataDir) {
+  if (!autoStartPending) return
+
+  autoRetryCount++
+  if (autoRetryCount > maxAutoRetries) {
+    sendLog(`\n[ERROR] Máximo de reintentos alcanzado (${maxAutoRetries}). Contacta al soporte.\n`)
+    autoStartPending = false
+    return
+  }
+
+  const delayMs = 5000 + (autoRetryCount * 1000)
+  sendLog(`\n[INFO] Reintentando en ${delayMs / 1000}s... (intento ${autoRetryCount}/${maxAutoRetries})\n`)
+  setTimeout(() => {
+    if (autoStartPending && !scraper) {
+      start(root, dataDir)
+    }
+  }, delayMs)
 }
 
 function stop() {
@@ -118,6 +148,41 @@ function stop() {
 
 function isRunning() {
   return scraper !== null
+}
+
+function autoStart(root, dataDir) {
+  autoStartPending = true
+  autoRetryCount = 0
+
+  const tokenPath = path.join(dataDir, 'bakers_token.txt')
+
+  if (fs.existsSync(tokenPath)) {
+    sendLog('[INFO] Token encontrado. Iniciando scraper...\n')
+    start(root, dataDir)
+  } else {
+    sendLog('[INFO] Token no encontrado.\n')
+    sendLog('[INFO] Haz click en "Start" y se abrirá el navegador para iniciar sesión.\n')
+    autoStartPending = false
+  }
+}
+
+function monitorToken(tokenPath, root, dataDir) {
+  const interval = setInterval(() => {
+    if (fs.existsSync(tokenPath)) {
+      clearInterval(interval)
+      sendLog('[INFO] Sesión iniciada. Iniciando scraper...\n')
+      autoStartPending = true
+      start(root, dataDir)
+    }
+  }, 1000)
+
+  setTimeout(() => {
+    if (!fs.existsSync(tokenPath)) {
+      clearInterval(interval)
+      sendLog('[WARNING] Timeout esperando token. Canceling auto-start.\n')
+      autoStartPending = false
+    }
+  }, 300000) // 5 minutos timeout
 }
 
 function sendLog(msg) {
@@ -139,5 +204,6 @@ module.exports = {
   setWindowsRef,
   start,
   stop,
-  isRunning
+  isRunning,
+  autoStart
 }

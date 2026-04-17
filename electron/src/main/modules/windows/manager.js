@@ -17,9 +17,9 @@ function createMain(isDev, rendererUrl) {
     backgroundColor: '#0d0d14',
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color:       '#0d0d14',
+      color:       'rgba(13, 13, 20, 0)',
       symbolColor: '#c8a84b',
-      height: 36,
+      height: 40,
     },
     webPreferences: {
       preload: preloadPath,

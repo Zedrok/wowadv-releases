@@ -103,11 +103,11 @@ body { display: flex; flex-direction: column; }
   -webkit-app-region: no-drag;
   display: flex;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: 8px;
   flex-shrink: 0;
   flex-wrap: nowrap;
-  padding-right: 90px;
-  z-index: 1;
+  position: relative;
+  padding-right: 140px;
 }
 
 .titlebar-right .btn {
@@ -174,43 +174,6 @@ body { display: flex; flex-direction: column; }
 .btn-ghost:hover { background: rgba(255, 255, 255, 0.05); }
 
 .btn-xs { padding: 3px 8px; font-size: 11px; }
-
-/* ── Window Controls ───────────────────────────────────────── */
-.window-controls {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.window-btn {
-  -webkit-app-region: no-drag;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 150ms ease-out;
-  border-radius: var(--radius-sm);
-}
-
-.window-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--text-primary);
-}
-
-.window-btn:active {
-  transform: scale(0.95);
-}
-
-.window-btn-close:hover {
-  background: rgba(231, 76, 60, 0.3);
-  color: var(--danger);
-}
 
 /* ── Info/Filter Bar ───────────────────────────────────────── */
 #tabRaids {
@@ -347,7 +310,7 @@ body { display: flex; flex-direction: column; }
 /* Header row */
 .raid-header {
   display: grid;
-  grid-template-columns: 1fr 60px 70px 30px 30px 30px;
+  grid-template-columns: 1fr 60px 60px 70px 30px 30px 30px;
   gap: var(--spacing-md);
   align-items: center;
   padding: var(--spacing-md) var(--spacing-lg);
@@ -379,11 +342,18 @@ body { display: flex; flex-direction: column; }
   gap: var(--spacing-sm);
 }
 
+.raid-time {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+}
+
 .raid-time-day {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
   color: var(--gold);
-  margin-top: 4px;
+  letter-spacing: 0.3px;
 }
 
 .raid-time-line {
@@ -442,6 +412,7 @@ body { display: flex; flex-direction: column; }
 .raid-status {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   font-size: 10px;
   font-weight: 700;
@@ -540,6 +511,70 @@ body { display: flex; flex-direction: column; }
 /* ── Accessibility ─────────────────────────────────────────── */
 .raid-card:focus-within { outline: 2px solid var(--gold); outline-offset: -1px; }
 
+/* ── Log Panel ─────────────────────────────────────────────── */
+.log-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.log-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.log-clear {
+  padding: 4px 12px;
+  background: rgba(231, 76, 60, 0.2);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  border-radius: var(--radius-sm);
+  color: #ffaaaa;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 150ms ease-out;
+}
+
+.log-clear:hover {
+  background: rgba(231, 76, 60, 0.3);
+  color: var(--danger);
+}
+
+.log-clear:active {
+  transform: scale(0.98);
+}
+
+#logContent {
+  flex: 1;
+  padding: var(--spacing-lg);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-family: var(--font-mono);
+  line-height: 1.4;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.log-panel[hidden] {
+  display: none !important;
+}
+
+/* ── Legend ────────────────────────────────────────────────── */
+.legend {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .raid-card, .btn, .raid-expand, .raid-slots-bar-fill { transition: none; }
   @keyframes pulse { to { opacity: 1; } }
@@ -547,12 +582,15 @@ body { display: flex; flex-direction: column; }
 
 /* ── Responsive ────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .raid-header { grid-template-columns: 1fr 50px 60px 30px 30px 30px; }
+  .raid-header { grid-template-columns: 1fr 40px 50px 60px 30px 30px 30px; }
   .raid-details { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--spacing-md); }
 }
 
 @media (max-width: 768px) {
-  .raid-header { grid-template-columns: 1fr 30px 30px; gap: var(--spacing-sm); }
+  .raid-header { grid-template-columns: 1fr 35px 30px 30px; gap: var(--spacing-sm); }
+  .raid-time { gap: 0; }
+  .raid-time-day { font-size: 9px; }
+  .raid-time-line { font-size: 10px; }
   .raid-status { display: none; }
   .raid-slots { display: none; }
   .raid-link-btn { font-size: 12px; }

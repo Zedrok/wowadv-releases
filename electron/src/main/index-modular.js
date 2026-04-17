@@ -63,6 +63,9 @@ app.whenReady().then(() => {
   watcherModule.watchRaids(RAIDS_JSON)
   watcherModule.watchPrices(PRICES_JSON)
 
+  // Auto-start scraper (with login if needed) - in background, no window visible
+  scraperModule.autoStart(ROOT, DATA_DIR)
+
   // Auto-check for updates (silent, 3s after start)
   setTimeout(() => updaterModule.checkAndShowUpdate(true), 3000)
 

@@ -29,8 +29,4 @@ contextBridge.exposeInMainWorld('api', {
   onScraperStatus:(cb) => ipcRenderer.on('scraper-status',  (_, d) => cb(d)),
   onScraperLog:   (cb) => ipcRenderer.on('scraper-log',     (_, d) => cb(d)),
   onShowLogs:     (cb) => ipcRenderer.on('show-logs',       ()     => cb()),
-
-  minimizeWindow:  () => ipcRenderer.send('minimize-window'),
-  maximizeWindow:  () => ipcRenderer.send('maximize-window'),
-  closeWindow:     () => ipcRenderer.send('close-window'),
 })

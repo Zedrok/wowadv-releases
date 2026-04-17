@@ -55,27 +55,6 @@ function registerHandlers(config) {
     try { fs.writeFileSync(FAV_LISTS_FILE, JSON.stringify(lists)) } catch (_) {}
   })
 
-  // Window controls
-  ipcMain.on('minimize-window', () => {
-    if (windows.main && !windows.main.isDestroyed()) {
-      windows.main.minimize()
-    }
-  })
-  ipcMain.on('maximize-window', () => {
-    if (windows.main && !windows.main.isDestroyed()) {
-      if (windows.main.isMaximized()) {
-        windows.main.unmaximize()
-      } else {
-        windows.main.maximize()
-      }
-    }
-  })
-  ipcMain.on('close-window', () => {
-    if (windows.main && !windows.main.isDestroyed()) {
-      windows.main.close()
-    }
-  })
-
   // Updates
   ipcMain.handle('get-app-version', () => require('electron').app.getVersion())
   ipcMain.handle('check-for-updates', () => updaterModule.checkAndShowUpdate(false))
