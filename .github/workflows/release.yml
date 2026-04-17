@@ -38,7 +38,7 @@ jobs:
         with:
           name: Release v${{ steps.version.outputs.VERSION }}
           tag_name: v${{ steps.version.outputs.VERSION }}
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.RELEASES_TOKEN }}
           repository: Zedrok/wowadv-releases
           files: |
             electron/dist/win-unpacked/Bakers Raid Monitor.exe
