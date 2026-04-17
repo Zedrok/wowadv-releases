@@ -7,6 +7,7 @@ const scraperModule = require('./modules/scraper/scraper.js')
 const watcherModule = require('./modules/watcher/watcher.js')
 const updaterModule = require('./modules/updater/updater.js')
 const { registerHandlers } = require('./modules/ipc/handlers.js')
+const { createTray } = require('./modules/tray/tray.js')
 
 const IS_DEV = process.env.NODE_ENV === 'development'
 const ROOT = path.join(app.getAppPath(), '..')
@@ -44,6 +45,9 @@ app.whenReady().then(() => {
     openPrices: () => WindowsManager.createPrices(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
   }
   watcherModule.setNextRunsWindow(() => winConfig.main)
+
+  // Setup tray icon
+  createTray(winConfig)
 
   // Register all IPC handlers
   registerHandlers({

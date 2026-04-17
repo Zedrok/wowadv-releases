@@ -35,6 +35,12 @@ function createMain(isDev, rendererUrl) {
     main.loadFile(htmlPath)
   }
 
+  // Minimize to tray instead of closing
+  main.on('close', (e) => {
+    e.preventDefault()
+    main.hide()
+  })
+
   main.on('closed', () => { main = null })
   return main
 }
