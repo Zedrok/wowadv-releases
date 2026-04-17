@@ -5,13 +5,18 @@ let watcher = null
 let pricesWatcher = null
 let mainWindow = null
 let nextRunsWindow = null
+let windowsRef = null
 
-export function setMainWindow(win) {
+function setMainWindow(win) {
   mainWindow = win
 }
 
-export function setNextRunsWindow(win) {
+function setNextRunsWindow(win) {
   nextRunsWindow = win
+}
+
+function setWindowsRef(ref) {
+  windowsRef = ref
 }
 
 function broadcastEvent(channel, payload) {
@@ -19,7 +24,7 @@ function broadcastEvent(channel, payload) {
   if (nextRunsWindow && !nextRunsWindow.isDestroyed()) nextRunsWindow.webContents.send(channel, payload)
 }
 
-export function watchRaids(raidsPath) {
+function watchRaids(raidsPath) {
   if (!fs.existsSync(raidsPath)) fs.writeFileSync(raidsPath, '{}')
 
   let lastMtime = 0
@@ -36,7 +41,7 @@ export function watchRaids(raidsPath) {
   loadAndSendRaids(raidsPath)
 }
 
-export function watchPrices(pricesPath) {
+function watchPrices(pricesPath) {
   let lastMtime = 0
   pricesWatcher = setInterval(() => {
     try {
@@ -47,6 +52,8 @@ export function watchPrices(pricesPath) {
       }
     } catch (_) {}
   }, 500)
+
+  if (fs.existsSync(pricesPath)) loadAndSendPrices(pricesPath)
 }
 
 function loadAndSendRaids(raidsPath) {
@@ -66,19 +73,30 @@ function loadAndSendRaids(raidsPath) {
 function loadAndSendPrices(pricesPath) {
   try {
     const json = JSON.parse(fs.readFileSync(pricesPath, 'utf8'))
-    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('prices-data', json)
+    const pw = windowsRef?.prices
+    if (pw && !pw.isDestroyed()) pw.webContents.send('prices-data', json)
   } catch (_) {}
 }
 
-export function stopWatchers() {
+function stopWatchers() {
   if (watcher) clearInterval(watcher)
   if (pricesWatcher) clearInterval(pricesWatcher)
 }
 
-export function getRaids(raidsPath) {
+function getRaids(raidsPath) {
   try { return JSON.parse(fs.readFileSync(raidsPath, 'utf8')) } catch (_) { return { data: [] } }
 }
 
-export function getPrices(pricesPath) {
+function getPrices(pricesPath) {
   try { return JSON.parse(fs.readFileSync(pricesPath, 'utf8')) } catch (_) { return { services: [], categories: [] } }
+}
+
+module.exports = {
+  setMainWindow,
+  setNextRunsWindow,
+  watchRaids,
+  watchPrices,
+  stopWatchers,
+  getRaids,
+  getPrices
 }

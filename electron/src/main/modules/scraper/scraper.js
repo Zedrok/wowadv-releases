@@ -2,9 +2,14 @@ const { spawn, execFileSync } = require('child_process')
 
 let scraper = null
 let mainWindow = null
+let windowsRef = null
 
-export function setMainWindow(win) {
+function setMainWindow(win) {
   mainWindow = win
+}
+
+function setWindowsRef(ref) {
+  windowsRef = ref
 }
 
 function findPython() {
@@ -60,7 +65,7 @@ print(','.join(missing))
   })
 }
 
-export function start(root, dataDir) {
+function start(root, dataDir) {
   if (scraper) return
 
   const pythonCmd = findPython()
@@ -104,14 +109,14 @@ function launch(pythonCmd, scriptPath, root, dataDir) {
   sendStatus({ running: true })
 }
 
-export function stop() {
+function stop() {
   if (!scraper) return
   scraper.kill()
   scraper = null
   sendStatus({ running: false })
 }
 
-export function isRunning() {
+function isRunning() {
   return scraper !== null
 }
 
@@ -121,8 +126,18 @@ function sendLog(msg) {
 
 function sendStatus(status) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('scraper-status', status)
+  const pw = windowsRef?.prices
+  if (pw && !pw.isDestroyed()) pw.webContents.send('scraper-status', status)
 }
 
 function sendShowLogs() {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('show-logs', null)
+}
+
+module.exports = {
+  setMainWindow,
+  setWindowsRef,
+  start,
+  stop,
+  isRunning
 }

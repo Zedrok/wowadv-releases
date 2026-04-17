@@ -2,6 +2,7 @@
 
 let pricesServices = []
 let hiddenCombos   = new Set()
+let searchText     = ''
 function fmtGold(n) {
   if (n >= 1_000) return (n / 1_000).toLocaleString('en', { maximumFractionDigits: 1 }) + 'k'
   return String(n)
@@ -145,7 +146,7 @@ function buildCard(r, diffCls, isFull) {
     : r.date
 
   return `
-    <div class="card ${diffCls}${isFull ? ' card-full' : ''}"${r.url ? ` data-url="${esc(r.url)}" style="cursor:pointer"` : ''}>
+    <div class="card ${diffCls}${isFull ? ' card-full' : ''}"${r.url ? ` data-url="${esc(r.url)}" style="cursor:pointer"` : ''}${r.isFuture ? ' data-future="true"' : ''}>
       <div class="card-top">
         <span class="card-datetime">${esc(dateShort)} · ${esc(r.time)}</span>
         <span class="card-books ${booksClass}">${esc(r.bookings)}</span>
@@ -165,20 +166,35 @@ function buildCard(r, diffCls, isFull) {
 
 /* ── Build section HTML ────────────────────────────────────── */
 
-function buildSection(title, badgeCls, raidName, { available, full }, diffCls) {
+function buildSection(title, raidType, takeBySavedState, showFull, isFull) {
+  const unsavedData = takeBySavedState(raidType, false)
+  const savedData = takeBySavedState(raidType, true)
+
   // Ocultar sección completa si no hay nada que mostrar
-  if (available.length === 0 && full.length === 0) return ''
+  const totalAvail = unsavedData.available.length + savedData.available.length
+  const totalFull = unsavedData.full.length + savedData.full.length
+  if (totalAvail === 0 && totalFull === 0) return ''
 
   let cardsHtml = ''
-  if (available.length > 0) {
-    cardsHtml += `<div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${available.map(r => buildCard(r, diffCls, false)).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
-  }
-  if (full.length > 0) {
-    cardsHtml += `<div class="row-label">Full</div><div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${full.map(r => buildCard(r, diffCls, true)).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
+
+  const savedColor = raidType === 'Mythic' ? 'mythic' : 'heroic'
+
+  // Mostrar Unsaved (color normal = azul)
+  if (unsavedData.available.length > 0 || unsavedData.full.length > 0) {
+    const allUnsaved = [...unsavedData.available, ...unsavedData.full]
+    cardsHtml += `<span class="badge badge-normal">Unsaved</span><div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allUnsaved.map(r => buildCard(r, 'normal', isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
   }
 
-  // Precios asociados a esta categoría
-  const sampleRow = available[0] || full[0]
+  // Mostrar Saved (color específico por raidType) - disponibles y full juntos con badge
+  const allSaved = [...savedData.available, ...savedData.full]
+  if (allSaved.length > 0) {
+    const badgeLabel = raidType === 'Mythic' ? 'Mythic' : 'Saved'
+    cardsHtml += `<span class="badge badge-${savedColor}">${badgeLabel}</span><div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allSaved.map(r => buildCard(r, savedColor, isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
+  }
+
+  // Precios asociados (usar primer raid de cualquier estado)
+  const allRaids = [...unsavedData.available, ...unsavedData.full, ...savedData.available, ...savedData.full]
+  const sampleRow = allRaids[0]
   const matched = sampleRow ? matchPrices(sampleRow) : []
   const priceRows = matched.map(s => {
     const name = s.name.replace(/^🔸\s*/, '')
@@ -189,11 +205,10 @@ function buildSection(title, badgeCls, raidName, { available, full }, diffCls) {
   return `
     <div class="section">
       <div class="section-title">
-        <span class="badge ${badgeCls}">${title}</span>
-        <span class="section-count">${available.length} disponible${available.length !== 1 ? 's' : ''}${full.length > 0 ? ` · ${full.length} full` : ''}</span>
+        <span class="badge">${title}</span>
+        <span class="section-count">${totalAvail} disponible${totalAvail !== 1 ? 's' : ''}${totalFull > 0 ? ` · ${totalFull} full` : ''}</span>
         ${priceTip}
       </div>
-      <div class="section-raids-name">${esc(raidName)}</div>
       ${cardsHtml}
     </div>`
 }
@@ -202,7 +217,7 @@ function buildSection(title, badgeCls, raidName, { available, full }, diffCls) {
 
 function updateFilterPanel(combos) {
   const panel = document.getElementById('filterPanel')
-  const currentKeys = new Set(combos.map(c => `${c.raids}||${c.diff}||${c.loot}`))
+  const currentKeys = new Set(combos.map(c => c.raidType))
 
   // Quitar chips de combos que ya no existen
   panel.querySelectorAll('.filter-chip').forEach(chip => {
@@ -210,17 +225,16 @@ function updateFilterPanel(combos) {
   })
 
   // Agregar chips nuevos
-  combos.forEach(({ raids, diff, loot }) => {
-    const key = `${raids}||${diff}||${loot}`
-    if (panel.querySelector(`[data-key="${CSS.escape(key)}"]`)) return
-    const diffCls = diff.toLowerCase().includes('heroic') ? 'heroic' : 'normal'
+  combos.forEach(({ raidType }) => {
+    if (panel.querySelector(`[data-key="${CSS.escape(raidType)}"]`)) return
+    const diffCls = raidType === 'Mythic' ? 'mythic' : 'normal'
     const chip = document.createElement('span')
     chip.className = `filter-chip chip-${diffCls}`
-    chip.dataset.key = key
-    chip.textContent = `${raids} · ${diff} · ${loot}`
+    chip.dataset.key = raidType
+    chip.textContent = raidType
     chip.addEventListener('click', () => {
-      if (hiddenCombos.has(key)) hiddenCombos.delete(key)
-      else hiddenCombos.add(key)
+      if (hiddenCombos.has(raidType)) hiddenCombos.delete(raidType)
+      else hiddenCombos.add(raidType)
       render()
     })
     panel.appendChild(chip)
@@ -252,22 +266,39 @@ async function render() {
   document.getElementById('lastUpdate').textContent =
     payload?.timestamp ? `Actualizado: ${payload.timestamp}` : '—'
 
-  // Filtrar: solo futuros (con 5 min de gracia) + solo unlocked + solo hoy
+  // Filtrar: unlocked + búsqueda + solo hoy
   const GRACE_MS = 5 * 60 * 1000
   const todayStr = `${now.getMonth() + 1}`.padStart(2, '0') + '/' + `${now.getDate()}`.padStart(2, '0')
-  const future = allRows.filter(r => {
+  const searchQ = searchText.trim().toLowerCase()
+  const showPast = document.getElementById('chkPast').checked
+
+  const allFiltered = allRows.filter(r => {
     const isUnlocked = r.lock.toLowerCase().includes('unlocked')
     if (!isUnlocked) return false
-    // r.date es "Thursday 03/26" — extraer MM/DD
+    // Solo hoy
     const datePart = (r.date || '').split(' ')[1] || ''
     if (datePart !== todayStr) return false
+    // Búsqueda por texto en: equipo, raids, horario, dificultad, loot, notas
+    if (searchQ) {
+      const searchableText = `${r.team} ${r.time} ${r.raids} ${r.difficulty} ${r.loot} ${r.notes}`.toLowerCase()
+      if (!searchableText.includes(searchQ)) return false
+    }
+    return true
+  })
+
+  // Marcar cuáles son futuros y ordenar (futuros primero)
+  const future = allFiltered.map(r => {
     const d = parseRaidToDate(r.date, r.time)
     const isFuture = d && (d.getTime() + GRACE_MS) > now
-    if (!isFuture) {
-      console.log(`[SKIP past/invalid] ${r.date} ${r.time} | lock="${r.lock}" | parsed=${d ? d.toISOString() : 'null'} | now=${now.toISOString()}`)
-    }
-    return isFuture
+    return { ...r, isFuture, parsedDate: d }
   })
+    .filter(r => r.isFuture || showPast)
+    .sort((a, b) => {
+      // Primero futuros, luego pasados
+      if (a.isFuture !== b.isFuture) return a.isFuture ? -1 : 1
+      // Dentro de cada grupo, ordenar por fecha/hora
+      return raidSortKey(a) - raidSortKey(b)
+    })
 
   console.log(`[popup] allRows=${allRows.length} | future+unlocked=${future.length}`)
   console.log('[popup] future runs:', future.map(r => `${r.date} ${r.time} ${r.difficulty} ${r.loot} lock="${r.lock}"`))
@@ -281,34 +312,74 @@ async function render() {
 
   const showFull = document.getElementById('chkFull').checked
 
-  // Recopilar todas las combinaciones raids+dificultad+loot presentes
+  // Helper para parsear tipo de raid (March, Void, Mythic)
+  function getRaidType(raids, difficulty) {
+    const text = (raids || '').toLowerCase()
+    // Si la dificultad es Mythic, categorizar como Mythic
+    if (difficulty?.includes('Mythic')) return { name: 'Mythic', order: 2 }
+    // Si contiene Mythic en el texto pero no es la dificultad, aún así es Mythic
+    if (text.includes('mythic')) return { name: 'Mythic', order: 2 }
+    if (text.includes('void') || text.includes('dream')) return { name: 'Void', order: 0 }
+    if (text.includes('march')) return { name: 'March', order: 1 }
+    return { name: 'Other', order: 3 }
+  }
+
+  // Agrupar solo por Raid Type
   const combos = []
   const seen   = new Set()
   future
     .slice()
     .sort((a, b) => raidSortKey(a) - raidSortKey(b))
     .forEach(r => {
-      const key = `${r.raids}||${r.difficulty}||${r.loot}`
-      if (!seen.has(key)) { seen.add(key); combos.push({ raids: r.raids, diff: r.difficulty, loot: r.loot }) }
+      const raidType = getRaidType(r.raids, r.difficulty)
+      const key = raidType.name
+      if (!seen.has(key)) {
+        seen.add(key)
+        combos.push({ raidType: raidType.name, raidOrder: raidType.order })
+      }
     })
 
-  const take = (raids, diff, loot) => {
+  // Ordenar combos: por raid type
+  combos.sort((a, b) => a.raidOrder - b.raidOrder)
+
+  const takeByType = (raidType) => {
     const matching = future
-      .filter(r => r.raids === raids && r.difficulty === diff && r.loot === loot)
+      .filter(r => getRaidType(r.raids, r.difficulty).name === raidType)
       .sort((a, b) => raidSortKey(a) - raidSortKey(b))
-    const available = matching.filter(r => !isFull(r.bookings))
-    const full      = showFull ? matching.filter(r => isFull(r.bookings)) : []
+    return matching
+  }
+
+  const takeBySavedState = (raidType, isSaved) => {
+    const all = takeByType(raidType)
+    const filtered = all.filter(r => {
+      const s = r.raids.includes('UNSAVED') ? 'Unsaved' : 'Saved'
+      return isSaved ? s === 'Saved' : s === 'Unsaved'
+    })
+    const available = filtered.filter(r => !isFull(r.bookings))
+    const full      = showFull ? filtered.filter(r => isFull(r.bookings)) : []
     return { available, full }
   }
 
   updateFilterPanel(combos)
 
-  const visibleCombos = combos.filter(({ raids, diff, loot }) => !hiddenCombos.has(`${raids}||${diff}||${loot}`))
-  const html = visibleCombos.map(({ raids, diff, loot }) => {
-    const diffCls  = diff.toLowerCase().includes('heroic') ? 'heroic' : 'normal'
-    const badgeCls = `badge-${diffCls}`
-    const title    = `${diff} · ${loot}`
-    return buildSection(title, badgeCls, raids, take(raids, diff, loot), diffCls)
+  const visibleCombos = combos.filter(({ raidType }) =>
+    !hiddenCombos.has(raidType)
+  )
+  const html = visibleCombos.map(({ raidType }) => {
+    const allRaids = takeByType(raidType)
+    if (allRaids.length === 0) return ''
+
+    // Usar nombre real del raid del primer item, o nombre genérico
+    let title = raidType
+    const sample = allRaids[0]
+    if (sample) {
+      const raids = (sample.raids || '').toUpperCase()
+      if (raids.includes('MARCH')) title = 'March on Quel\'danas'
+      else if (raids.includes('VOID') || raids.includes('DREAM')) title = 'Voidspire / Dream'
+      else if (raids.includes('MYTHIC')) title = 'Mythic'
+    }
+
+    return buildSection(title, raidType, takeBySavedState, showFull, isFull)
   }).join('')
 
   document.getElementById('content').innerHTML = html
@@ -316,40 +387,68 @@ async function render() {
   // Inicializar fades y listener scroll en cada carrusel
   document.querySelectorAll('.cards-row').forEach(row => {
     updateCarouselFades(row)
-    row.addEventListener('scroll', () => updateCarouselFades(row), { passive: true })
+
+    // Detectar arrastre para evitar abrir links
+    let isDragging = false
+    let lastScrollLeft = row.scrollLeft
+
+    row.addEventListener('mousedown', () => {
+      lastScrollLeft = row.scrollLeft
+      isDragging = false
+    }, { passive: true })
+
+    row.addEventListener('scroll', () => {
+      updateCarouselFades(row)
+      // Si el scroll cambió desde mousedown, es un arrastre
+      if (Math.abs(row.scrollLeft - lastScrollLeft) > 5) {
+        isDragging = true
+      }
+    }, { passive: true })
+
+    row.addEventListener('mouseup', () => {
+      // Marcar el carrusel como "dragged" por un corto tiempo
+      if (isDragging) {
+        row.classList.add('dragging')
+        setTimeout(() => row.classList.remove('dragging'), 50)
+      }
+    }, { passive: true })
+
+    // Scrollear al primer card futuro en cada carrusel
+    const firstFuture = row.querySelector('[data-future="true"]')
+    if (firstFuture) {
+      const cardWidth = firstFuture.offsetWidth
+      const containerScrollLeft = row.scrollLeft
+      const cardOffsetLeft = firstFuture.offsetLeft
+      const rowWidth = row.offsetWidth
+
+      // Si el card futuro no está visible, scrollear hacia él
+      if (cardOffsetLeft < containerScrollLeft || cardOffsetLeft + cardWidth > containerScrollLeft + rowWidth) {
+        row.scrollLeft = Math.max(0, cardOffsetLeft - 5)
+      }
+    }
   })
 }
 
 // ── Botones ────────────────────────────────────────────────
-document.getElementById('btnReload').addEventListener('click', async () => {
-  const btn = document.getElementById('btnReload')
-  btn.textContent = 'Scraping…'
-  btn.disabled = true
-
-  // Capturar timestamp actual antes de disparar el scrape
-  const before = (await window.api.getRaids())?.timestamp ?? null
-  window.api.triggerScrape()
-
-  // Polling hasta que el timestamp cambie (máx 60s)
-  const deadline = Date.now() + 60000
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, 1000))
-    const current = (await window.api.getRaids())?.timestamp ?? null
-    if (current !== before) break
-  }
-
-  await render()
-  btn.textContent = 'Actualizar'
-  btn.disabled = false
-})
-
 document.getElementById('chkFull').addEventListener('change', render)
+document.getElementById('chkPast').addEventListener('change', render)
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchText = e.target.value
+  render()
+})
 
 document.getElementById('content').addEventListener('click', e => {
   // No propagar clicks del botón de precios
   if (e.target.closest('.btn-price-info')) { e.stopPropagation(); return }
   const card = e.target.closest('[data-url]')
-  if (card) window.api.openUrl(card.dataset.url)
+  // No abrir link si el carrusel fue arrastrado
+  if (card) {
+    const row = card.closest('.cards-row')
+    if (row && !row.classList.contains('dragging')) {
+      window.api.openUrl(card.dataset.url)
+    }
+  }
 })
 
 document.getElementById('btnCompact').addEventListener('click', () => {

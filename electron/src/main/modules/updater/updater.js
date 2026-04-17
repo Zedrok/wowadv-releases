@@ -9,7 +9,7 @@ const GITHUB_REPO  = 'bakers-raid-releases'
 
 let mainWindow = null
 
-export function setMainWindow(win) {
+function setMainWindow(win) {
   mainWindow = win
 }
 
@@ -99,7 +99,7 @@ function launchUpdater(tempPath, exePath) {
   spawn('wscript.exe', ['//B', '//NoLogo', vbsPath], { detached: true, stdio: 'ignore' }).unref()
 }
 
-export function applyPendingUpdate() {
+function applyPendingUpdate() {
   if (process.env.NODE_ENV === 'development') return false
   const exePath  = process.env.PORTABLE_EXECUTABLE_FILE || app.getPath('exe')
   const tempPath = exePath + '.new'
@@ -136,7 +136,7 @@ async function downloadAndReplace(url) {
   }
 }
 
-export async function checkAndShowUpdate(silent = false) {
+async function checkAndShowUpdate(silent = false) {
   try {
     const release   = await fetchLatestRelease()
     const latestTag = release.tag_name || ''
@@ -162,4 +162,10 @@ export async function checkAndShowUpdate(silent = false) {
   } catch (e) {
     return { hasUpdate: false, error: e.message }
   }
+}
+
+module.exports = {
+  setMainWindow,
+  applyPendingUpdate,
+  checkAndShowUpdate,
 }

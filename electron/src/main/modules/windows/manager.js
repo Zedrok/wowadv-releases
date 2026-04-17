@@ -1,11 +1,14 @@
-const { BrowserWindow } = require('electron')
+const { BrowserWindow, app } = require('electron')
 const path = require('path')
 
 let main = null
 let nextRuns = null
 let prices = null
 
-export function createMain(isDev, rendererUrl) {
+function createMain(isDev, rendererUrl) {
+  const appPath = app.getAppPath()
+  const preloadPath = isDev ? path.join(appPath, 'out/preload/index.js') : path.join(appPath, 'preload/index.js')
+
   main = new BrowserWindow({
     width:     1440,
     height:    780,
@@ -19,7 +22,7 @@ export function createMain(isDev, rendererUrl) {
       height: 36,
     },
     webPreferences: {
-      preload: path.join(__dirname, '../../preload/index.js'),
+      preload: preloadPath,
       contextIsolation: true,
     },
   })
@@ -28,20 +31,24 @@ export function createMain(isDev, rendererUrl) {
     main.loadURL(rendererUrl)
     main.webContents.openDevTools({ mode: 'detach' })
   } else {
-    main.loadFile(path.join(__dirname, '../../renderer/index.html'))
+    const htmlPath = path.join(appPath, 'renderer/index.html')
+    main.loadFile(htmlPath)
   }
 
   main.on('closed', () => { main = null })
   return main
 }
 
-export function createNextRuns(isDev, rendererUrl) {
+function createNextRuns(isDev, rendererUrl) {
   if (nextRuns && !nextRuns.isDestroyed()) {
     if (nextRuns.isMinimized()) nextRuns.restore()
     nextRuns.show()
     nextRuns.focus()
     return nextRuns
   }
+
+  const appPath = app.getAppPath()
+  const preloadPath = isDev ? path.join(appPath, 'out/preload/popup.js') : path.join(appPath, 'preload/popup.js')
 
   nextRuns = new BrowserWindow({
     width:     380,
@@ -51,7 +58,7 @@ export function createNextRuns(isDev, rendererUrl) {
     backgroundColor: '#0d0d14',
     title: 'Próximos Runs',
     webPreferences: {
-      preload: path.join(__dirname, '../../preload/popup.js'),
+      preload: preloadPath,
       contextIsolation: true,
     },
   })
@@ -61,18 +68,21 @@ export function createNextRuns(isDev, rendererUrl) {
     nextRuns.loadURL(rendererUrl + '/popup.html')
     nextRuns.webContents.openDevTools({ mode: 'detach' })
   } else {
-    nextRuns.loadFile(path.join(__dirname, '../../renderer/popup.html'))
+    nextRuns.loadFile(path.join(appPath, 'renderer/popup.html'))
   }
 
   nextRuns.on('closed', () => { nextRuns = null })
   return nextRuns
 }
 
-export function createPrices(isDev, rendererUrl) {
+function createPrices(isDev, rendererUrl) {
   if (prices && !prices.isDestroyed()) {
     prices.focus()
     return prices
   }
+
+  const appPath = app.getAppPath()
+  const preloadPath = isDev ? path.join(appPath, 'out/preload/prices.js') : path.join(appPath, 'preload/prices.js')
 
   prices = new BrowserWindow({
     width:     680,
@@ -82,7 +92,7 @@ export function createPrices(isDev, rendererUrl) {
     backgroundColor: '#0d0d14',
     title: 'Lista de Precios',
     webPreferences: {
-      preload: path.join(__dirname, '../../preload/prices.js'),
+      preload: preloadPath,
       contextIsolation: true,
     },
   })
@@ -92,21 +102,29 @@ export function createPrices(isDev, rendererUrl) {
     prices.loadURL(rendererUrl + '/prices.html')
     prices.webContents.openDevTools({ mode: 'detach' })
   } else {
-    prices.loadFile(path.join(__dirname, '../../renderer/prices.html'))
+    prices.loadFile(path.join(appPath, 'renderer/prices.html'))
   }
 
   prices.on('closed', () => { prices = null })
   return prices
 }
 
-export function closeAll() {
+function closeAll() {
   if (main && !main.isDestroyed()) main.close()
 }
 
-export const windows = {
+const windows = {
   get main() { return main },
   get nextRuns() { return nextRuns },
   get prices() { return prices },
   openNextRuns: () => createNextRuns(false, ''),
   openPrices: () => createPrices(false, ''),
+}
+
+module.exports = {
+  createMain,
+  createNextRuns,
+  createPrices,
+  closeAll,
+  windows
 }

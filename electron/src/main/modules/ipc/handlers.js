@@ -1,8 +1,11 @@
 const { ipcMain, shell } = require('electron')
-const fs = require('fs')
+const fs   = require('fs')
+const path = require('path')
 
-export function registerHandlers(config) {
+function registerHandlers(config) {
   const { scraperModule, watcherModule, updaterModule, windows } = config
+
+  scraperModule.setWindowsRef(windows)
 
   // Scraper control
   ipcMain.on('start-scraper', () => scraperModule.start(config.root, config.dataDir))
@@ -27,7 +30,13 @@ export function registerHandlers(config) {
 
   // Window management
   ipcMain.on('open-next-runs', () => windows.openNextRuns())
-  ipcMain.on('open-prices', () => windows.openPrices())
+  ipcMain.on('open-prices', () => {
+    windows.openPrices()
+    scraperModule.setWindowsRef(windows)
+  })
+  ipcMain.on('refresh-prices', () => {
+    try { fs.writeFileSync(path.join(config.dataDir, 'refresh_prices.flag'), '1') } catch (_) {}
+  })
   ipcMain.on('open-url', (_, url) => {
     if (!url || !url.startsWith('http')) return
     if (scraperModule.isRunning()) {
@@ -46,7 +55,32 @@ export function registerHandlers(config) {
     try { fs.writeFileSync(FAV_LISTS_FILE, JSON.stringify(lists)) } catch (_) {}
   })
 
+  // Window controls
+  ipcMain.on('minimize-window', () => {
+    if (windows.main && !windows.main.isDestroyed()) {
+      windows.main.minimize()
+    }
+  })
+  ipcMain.on('maximize-window', () => {
+    if (windows.main && !windows.main.isDestroyed()) {
+      if (windows.main.isMaximized()) {
+        windows.main.unmaximize()
+      } else {
+        windows.main.maximize()
+      }
+    }
+  })
+  ipcMain.on('close-window', () => {
+    if (windows.main && !windows.main.isDestroyed()) {
+      windows.main.close()
+    }
+  })
+
   // Updates
   ipcMain.handle('get-app-version', () => require('electron').app.getVersion())
   ipcMain.handle('check-for-updates', () => updaterModule.checkAndShowUpdate(false))
+}
+
+module.exports = {
+  registerHandlers
 }

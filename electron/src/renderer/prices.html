@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Precios</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { user-select: none; -webkit-user-select: none; cursor: default; }
@@ -252,24 +253,24 @@
 </head>
 <body>
   <div class="titlebar">
-    <span class="titlebar-title">💰 Lista de Precios</span>
+    <span class="titlebar-title"><i class="fa-solid fa-coins"></i> Lista de Precios</span>
     <div class="titlebar-right">
       <span class="titlebar-meta" id="lastUpdate">—</span>
     </div>
   </div>
   <div class="toolbar">
     <input type="text" id="searchInput" placeholder="Buscar servicio…" />
-    <button class="btn-new-list" id="btnNewList" title="Nueva lista de favoritos">＋</button>
-    <button class="btn-refresh"  id="btnRefresh">⟳ Actualizar</button>
+    <button class="btn-new-list" id="btnNewList" title="Nueva lista de favoritos"><i class="fa-solid fa-plus"></i></button>
+    <button class="btn-refresh" id="btnRefresh" disabled title="Inicia el scraper para actualizar"><i class="fa-solid fa-rotate-right"></i> Actualizar</button>
   </div>
   <div class="tabs" id="tabs">
-    <span class="tab" id="tabRecent" data-tab="recent">⚡ Actualizados recientemente</span>
+    <span class="tab" id="tabRecent" data-tab="recent"><i class="fa-solid fa-bolt"></i> Recientes</span>
     <span class="tab active" id="tabAll" data-tab="all">Todos</span>
   </div>
   <div class="new-list-bar" id="newListBar" style="display:none">
     <input type="text" id="newListInput" placeholder="Nombre de la lista…" maxlength="40" />
     <button class="btn-confirm" id="btnNewListConfirm">Crear</button>
-    <button class="btn-cancel"  id="btnNewListCancel">✕</button>
+    <button class="btn-cancel"  id="btnNewListCancel"><i class="fa-solid fa-xmark"></i></button>
   </div>
   <div class="content" id="content">
     <p class="placeholder">Cargando precios…</p>

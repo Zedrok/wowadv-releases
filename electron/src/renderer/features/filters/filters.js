@@ -2,13 +2,15 @@ import { parseRaidToDate } from '../../utils/helpers.js'
 import { saveFilters, loadFilters } from '../../storage.js'
 
 export const filters = {
-  soloFuturos: false,
-  difficulty:  '',
-  tipo:        '',
-  loot:        '',
-  lock:        '',
-  raids:       '',
-  soloDescuento: false,
+  soloFuturos:     true,
+  difficulty:      '',
+  tipo:            '',
+  loot:            '',
+  lock:            'Unlocked',
+  raids:           '',
+  team:            '',
+  soloDisponibles: true,
+  soloDescuento:   false,
 }
 
 export let filterText = ''
@@ -43,6 +45,11 @@ export function applyFilter(rows) {
     if (filters.loot && r.loot !== filters.loot) return false
     if (filters.lock && r.lock !== filters.lock) return false
     if (filters.raids && !r.raids.toLowerCase().includes(filters.raids.toLowerCase())) return false
+    if (filters.team && r.team !== filters.team) return false
+    if (filters.soloDisponibles) {
+      const [used, total] = (r.bookings || '').split('/').map(Number)
+      if (isNaN(used) || isNaN(total) || used >= total) return false
+    }
     if (filters.soloDescuento && !r.discount.includes('ON')) return false
     return true
   })
@@ -54,11 +61,12 @@ export function populateDropdowns(rows) {
   const fLoot = document.getElementById('fLoot')
   const fLock = document.getElementById('fLock')
   const fRaids = document.getElementById('fRaids')
+  const fTeam = document.getElementById('fTeam')
 
   populateSelect(fDifficulty, rows.map(r => r.difficulty), filters.difficulty)
   populateSelect(fTipo, rows.map(r => r.type), filters.tipo)
   populateSelect(fLoot, rows.map(r => r.loot), filters.loot)
-  populateSelect(fLock, rows.map(r => r.lock), filters.lock)
+  populateSelect(fTeam, rows.map(r => r.team), filters.team)
 
   const raidSet = []
   rows.forEach(r => {
@@ -96,15 +104,23 @@ export function updateFilterUI() {
   fDifficulty.value  = filters.difficulty
   fTipo.value        = filters.tipo
   fLoot.value        = filters.loot
-  fLock.value        = filters.lock
+  fLock.checked      = filters.lock === 'Unlocked'
   fRaids.value       = filters.raids
+  document.getElementById('fTeam').value            = filters.team
+  document.getElementById('fDisponibles').checked   = filters.soloDisponibles
   fDescuento.checked = filters.soloDescuento
 }
 
 export function resetFilters() {
-  Object.keys(filters).forEach(k => {
-    filters[k] = typeof filters[k] === 'boolean' ? false : ''
-  })
+  filters.soloFuturos = true
+  filters.difficulty = ''
+  filters.tipo = ''
+  filters.loot = ''
+  filters.lock = 'Unlocked'
+  filters.raids = ''
+  filters.team = ''
+  filters.soloDisponibles = true
+  filters.soloDescuento = false
   document.getElementById('filterInput').value = ''
   filterText = ''
   updateFilterUI()

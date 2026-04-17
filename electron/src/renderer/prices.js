@@ -355,25 +355,36 @@ newListInput.addEventListener('keydown', e => {
 })
 
 // ── Refresh button ─────────────────────────────────────────
-document.getElementById('btnRefresh').addEventListener('click', async () => {
-  const btn = document.getElementById('btnRefresh')
-  btn.textContent = 'Scraping…'
-  btn.disabled = true
+const btnRefresh = document.getElementById('btnRefresh')
+
+function setRefreshEnabled(enabled) {
+  btnRefresh.disabled = !enabled
+  btnRefresh.title = enabled ? 'Actualizar precios' : 'Inicia el scraper para actualizar'
+}
+
+btnRefresh.addEventListener('click', async () => {
+  btnRefresh.innerHTML = '<i class="fa-solid fa-rotate-right fa-spin"></i> Scraping...'
+  btnRefresh.disabled = true
 
   const before = payload?.timestamp ?? null
   window.api.refreshPrices()
 
-  const deadline = Date.now() + 60000
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, 1000))
+  const deadline = Date.now() + 5000
+  let updated = false
+  while (Date.now() < deadline && !updated) {
+    await new Promise(r => setTimeout(r, 500))
     const fresh = await window.api.getPrices()
-    if (fresh?.timestamp && fresh.timestamp !== before) { payload = fresh; break }
+    if (fresh?.timestamp && fresh.timestamp !== before) { payload = fresh; updated = true }
   }
 
   render()
-  btn.textContent = '⟳ Actualizar'
-  btn.disabled = false
+  btnRefresh.innerHTML = '<i class="fa-solid fa-rotate-right"></i> Actualizar'
+  btnRefresh.disabled = false
 })
+
+// ── Scraper status ──────────────────────────────────────────
+window.api.isRunning().then(running => setRefreshEnabled(running))
+window.api.onScraperStatus(({ running }) => setRefreshEnabled(running))
 
 let currentTab = 'all'
 

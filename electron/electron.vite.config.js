@@ -5,7 +5,16 @@ export default defineConfig({
   main: {
     build: {
       rollupOptions: {
-        input: resolve(__dirname, 'src/main/index-modular.js')
+        input: {
+          'index-modular': resolve(__dirname, 'src/main/index-modular.js'),
+          'modules/windows/manager': resolve(__dirname, 'src/main/modules/windows/manager.js'),
+          'modules/scraper/scraper': resolve(__dirname, 'src/main/modules/scraper/scraper.js'),
+          'modules/watcher/watcher': resolve(__dirname, 'src/main/modules/watcher/watcher.js'),
+          'modules/updater/updater': resolve(__dirname, 'src/main/modules/updater/updater.js'),
+          'modules/ipc/handlers': resolve(__dirname, 'src/main/modules/ipc/handlers.js')
+        },
+        preserveModules: true,
+        preserveModulesRoot: resolve(__dirname, 'src/main')
       }
     }
   },

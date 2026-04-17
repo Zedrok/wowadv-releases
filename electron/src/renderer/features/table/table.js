@@ -12,30 +12,30 @@ export function setSortCol(col) {
   sortCol = col
 }
 
-export function applySort(rows) {
-  if (!sortCol) return rows
+export function applySort(rows, col = sortCol) {
+  if (!col) return rows
   return [...rows].sort((a, b) => {
     let av, bv
-    if (sortCol === 'time') {
+    if (col === 'time') {
       av = parseTimeToMinutes(a.time)
       bv = parseTimeToMinutes(b.time)
       return sortAsc ? av - bv : bv - av
     }
-    if (sortCol === 'date') {
+    if (col === 'date') {
       const da = parseDateToOrdinal(a.date) * 10000 + parseTimeToMinutes(a.time)
       const db = parseDateToOrdinal(b.date) * 10000 + parseTimeToMinutes(b.time)
       return sortAsc ? da - db : db - da
     }
-    av = String(a[sortCol] || '').toLowerCase()
-    bv = String(b[sortCol] || '').toLowerCase()
+    av = String(a[col] || '').toLowerCase()
+    bv = String(b[col] || '').toLowerCase()
     return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av)
   })
 }
 
-export function computeFlashes(newRows) {
+export function computeFlashes(newRows, prevMapParam = prevMap) {
   newRows.forEach(r => {
     const k = rowKey(r)
-    const old = prevMap[k]
+    const old = prevMapParam[k]
     if (!old) flashMap[k] = 'flash-new'
     else if (old.bookings !== r.bookings) flashMap[k] = 'flash-upd'
   })

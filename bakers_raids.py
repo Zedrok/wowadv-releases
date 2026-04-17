@@ -97,6 +97,21 @@ def restore_session(page):
     page.wait_for_url(lambda u: u.rstrip("/").endswith("/home"), timeout=30000)
 
 
+def refresh_prices_with_playwright(context, on_response):
+    """Navega a /home en nueva page para capturar las respuestas naturales de la carga."""
+    try:
+        print("[Precios] Navegando a /home para capturar precios...")
+        tmp_page = context.new_page()
+        tmp_page.on("response", on_response)
+        tmp_page.goto(URL_HOME, wait_until="networkidle")
+        tmp_page.wait_for_timeout(2000)
+        tmp_page.close()
+        print("[Precios] Actualización completada.")
+        return True
+    except Exception as e:
+        print(f"  [Precios refresh] Error: {e}")
+    return False
+
 def main():
     # Buffer acumulado por fecha: { "2026-03-30": [...runs] }
     buffer = {}
@@ -195,12 +210,7 @@ def main():
 
                 if os.path.exists(REFRESH_PRICES_FLAG):
                     os.remove(REFRESH_PRICES_FLAG)
-                    print("\n[Precios] Actualizando desde home...")
-                    tmp = context.new_page()
-                    tmp.goto(URL_HOME, wait_until="domcontentloaded")
-                    tmp.wait_for_timeout(3000)
-                    tmp.close()
-                    print("[Precios] Pestaña temporal cerrada.")
+                    refresh_prices_with_playwright(context, on_response)
 
                 page.wait_for_timeout(500)
         except KeyboardInterrupt:

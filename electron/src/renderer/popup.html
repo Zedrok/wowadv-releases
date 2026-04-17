@@ -15,9 +15,15 @@
       --heroic-bg:  #1e0808;
       --heroic-acc: #8b1a1a;
       --heroic-fg:  #ffbbbb;
-      --normal-bg:  #080818;
-      --normal-acc: #1a1a7a;
-      --normal-fg:  #aabbff;
+      --normal-bg:  #0d0d2a;
+      --normal-acc: #3a3aaa;
+      --normal-fg:  #ccddff;
+      --mythic-bg:  #1a0f28;
+      --mythic-acc: #6a2a7a;
+      --mythic-fg:  #ffbbff;
+      --saved-bg:   #14120a;
+      --saved-acc:  #3a3020;
+      --saved-fg:   #b89968;
       --green:      #2ecc71;
     }
 
@@ -67,6 +73,21 @@
       align-items: center;
       gap: 5px;
     }
+
+    .search-input {
+      flex: 1;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      padding: 3px 6px;
+      font-size: 10px;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 120px;
+    }
+    .search-input:focus { border-color: var(--gold); }
+    .search-input::placeholder { color: var(--text-dim); }
 
     .hbtn {
       background: var(--bg3);
@@ -121,6 +142,8 @@
     }
     .badge-heroic { background: rgba(139,26,26,.5); color: var(--heroic-fg); border: 1px solid var(--heroic-acc); }
     .badge-normal { background: rgba(26,26,122,.5); color: var(--normal-fg); border: 1px solid var(--normal-acc); }
+    .badge-mythic { background: rgba(106,42,122,.5); color: var(--mythic-fg); border: 1px solid var(--mythic-acc); }
+    .badge-saved { background: rgba(58,48,32,.5); color: var(--saved-fg); border: 1px solid var(--saved-acc); }
 
     .section-count { font-size: 9px; color: var(--text-dim); }
 
@@ -216,6 +239,8 @@
     }
     .card.heroic { background: var(--heroic-bg); border-color: var(--heroic-acc); }
     .card.normal { background: var(--normal-bg); border-color: var(--normal-acc); }
+    .card.mythic { background: var(--mythic-bg); border-color: var(--mythic-acc); }
+    .card.saved { background: var(--saved-bg); border-color: var(--saved-acc); }
     .card.card-full { opacity: 0.55; border-style: dashed; }
 
     .card-top {
@@ -352,6 +377,8 @@
     }
     .filter-chip.chip-heroic { background: rgba(139,26,26,.4); color: var(--heroic-fg); border-color: var(--heroic-acc); }
     .filter-chip.chip-normal { background: rgba(26,26,122,.4); color: var(--normal-fg); border-color: var(--normal-acc); }
+    .filter-chip.chip-mythic { background: rgba(122,26,138,.4); color: var(--mythic-fg); border-color: var(--mythic-acc); }
+    .filter-chip.chip-saved { background: rgba(58,48,32,.4); color: var(--saved-fg); border-color: var(--saved-acc); }
     .filter-chip.hidden-chip { opacity: 0.35; background: transparent; color: var(--text-dim); border-color: var(--border); text-decoration: line-through; }
 
     /* Scrollbar */
@@ -367,12 +394,15 @@
       <span class="last-update" id="lastUpdate">—</span>
     </div>
     <div class="header-toolbar">
+      <input type="text" id="searchInput" class="search-input" placeholder="Buscar..." spellcheck="false" />
       <label class="hbtn hcheck" title="Mostrar runs llenos">
         <input type="checkbox" id="chkFull" /> Full
       </label>
+      <label class="hbtn hcheck" title="Mostrar runs pasados">
+        <input type="checkbox" id="chkPast" /> Pasados
+      </label>
       <button class="hbtn" id="btnCompact">⊟ Compacta</button>
       <button class="hbtn" id="btnFilter">⊞ Categorías</button>
-      <button class="hbtn hbtn-gold" id="btnReload">⟳ Refresh</button>
     </div>
     <div id="filterPanel" class="filter-panel" hidden></div>
   </div>
