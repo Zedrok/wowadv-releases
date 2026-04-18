@@ -34,7 +34,8 @@
             "x64"
           ]
         }
-      ]
+      ],
+      "icon": "resources/icon.ico"
     }
   },
   "devDependencies": {
@@ -42,5 +43,8 @@
     "electron": "^33.0.0",
     "electron-builder": "^26.8.1",
     "electron-vite": "^2.3.0"
+  },
+  "dependencies": {
+    "ico": "^0.3.3"
   }
 }
