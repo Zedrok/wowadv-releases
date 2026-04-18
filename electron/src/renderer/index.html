@@ -33,6 +33,7 @@
       <button class="btn btn-outline" id="btnNextRuns" title="Ver próximos runs"><i class="fa-solid fa-calendar-week"></i> Next Runs</button>
       <button class="btn btn-outline" id="btnPrices"  title="Ver lista de precios"><i class="fa-solid fa-coins"></i> Precios</button>
       <button class="btn btn-outline" id="btnLog"     title="Ver logs"><i class="fa-solid fa-terminal"></i> Logs</button>
+      <button class="btn btn-outline" id="btnCheckUpdates" title="Buscar actualizaciones"><i class="fa-solid fa-download"></i> Updates</button>
     </div>
   </header>
 
@@ -166,6 +167,60 @@
     </div>
 
   </div><!-- /tabRaids -->
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- UPDATE MODAL                                             -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="updateModalBackdrop" class="modal-backdrop" hidden>
+    <div class="modal update-modal">
+      <div class="modal-header">
+        <h2>Actualización Disponible</h2>
+        <button class="btn-close" id="updateModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="version-info">
+          <div class="version-row">
+            <span class="version-label">Versión Actual:</span>
+            <span class="version-current" id="versionCurrent">—</span>
+          </div>
+          <div class="version-arrow">→</div>
+          <div class="version-row">
+            <span class="version-label">Nueva Versión:</span>
+            <span class="version-new" id="versionNew">—</span>
+          </div>
+        </div>
+        <div class="progress-container" id="progressContainer" hidden>
+          <div class="progress-label">Descargando...</div>
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+          </div>
+          <div class="progress-percent" id="progressPercent">0%</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="updateModalCancel">Cancelar</button>
+        <button class="btn btn-gold" id="updateModalDownload">Descargar e Instalar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════════════ -->
+  <!-- CHANGELOG MODAL                                          -->
+  <!-- ════════════════════════════════════════════════════════ -->
+  <div id="changelogModalBackdrop" class="modal-backdrop" hidden>
+    <div class="modal changelog-modal">
+      <div class="modal-header">
+        <h2>Historial de Cambios</h2>
+        <button class="btn-close" id="changelogModalClose">&times;</button>
+      </div>
+      <div class="modal-body changelog-body" id="changelogBody">
+        <!-- Populated by updater.js -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" id="changelogModalClose2">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
   <script type="module" src="renderer-index.js"></script>
 </body>

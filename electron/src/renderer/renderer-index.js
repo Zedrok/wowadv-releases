@@ -6,6 +6,7 @@
 import * as table from './features/table/table.js'
 import * as filters from './features/filters/filters.js'
 import * as scraper from './features/scraper/scraper.js'
+import { initUpdater } from './features/updater/updater.js'
 import { rowKey } from './utils/helpers.js'
 
 // DOM refs
@@ -464,6 +465,9 @@ document.querySelectorAll('th[data-col]').forEach(th => {
 
 // ── Init ───────────────────────────────────────────────────────
 console.log('Renderer init: requesting initial data...')
+
+// Initialize updater
+initUpdater()
 
 // Show loading state initially
 scraper.setScraperState(false, true)
