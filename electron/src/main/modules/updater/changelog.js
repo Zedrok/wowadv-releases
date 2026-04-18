@@ -5,6 +5,15 @@
 
 const changelog = [
   {
+    version: '1.2.2',
+    date: '18 de abril de 2026',
+    changes: [
+      '📊 Agregada barra de progreso para descargas de actualización',
+      '🌐 Historial de cambios traducido completamente al español',
+      '⚙️ Actualizaciones solo se verifican manualmente, no automáticamente al iniciar'
+    ]
+  },
+  {
     version: '1.2.1',
     date: '18 de abril de 2026',
     changes: [
