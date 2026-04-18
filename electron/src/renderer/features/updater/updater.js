@@ -17,9 +17,9 @@ export async function initUpdater() {
     if (data.type === 'available') {
       latestVersion = data.version
       showUpdateModal()
-    } else if (data.type === 'progress') {
+    } else if (data.type === 'progress' || data.status === 'downloading') {
       updateProgressBar(data.percent)
-    } else if (data.type === 'downloaded') {
+    } else if (data.type === 'downloaded' || data.status === 'ready') {
       onUpdateDownloaded()
     }
   })
