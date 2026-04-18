@@ -45,13 +45,27 @@ try {
     stdio: 'inherit'
   });
 
-  // Copy renderer JS modules that Vite doesn't bundle
-  console.log('📋 Copying renderer modules...');
+  // Copy modules that Vite doesn't bundle
+  console.log('📋 Copying modules...');
+
+  // Copy renderer JS
   const srcRendererJs = path.join(electronDir, 'src', 'renderer', 'scheduled-runs.js');
   const destRendererJs = path.join(electronDir, 'out', 'renderer', 'scheduled-runs.js');
   if (fs.existsSync(srcRendererJs)) {
     fs.copyFileSync(srcRendererJs, destRendererJs);
     console.log('  ✓ Copied scheduled-runs.js');
+  }
+
+  // Copy changelog.js for IPC handler
+  const srcChangelog = path.join(electronDir, 'src', 'main', 'modules', 'updater', 'changelog.js');
+  const destChangelog = path.join(electronDir, 'out', 'main', 'modules', 'updater', 'changelog.js');
+  if (fs.existsSync(srcChangelog)) {
+    const destDir = path.dirname(destChangelog);
+    if (!fs.existsSync(destDir)) {
+      fs.mkdirSync(destDir, { recursive: true });
+    }
+    fs.copyFileSync(srcChangelog, destChangelog);
+    console.log('  ✓ Copied changelog.js');
   }
 
   // Copy public assets (audio files, etc.)
