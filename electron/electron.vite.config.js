@@ -35,12 +35,13 @@ export default defineConfig({
     }
   },
   renderer: {
+    root: resolve(__dirname, 'src/renderer'),
     build: {
       rollupOptions: {
         input: {
-          index:  resolve(__dirname, 'src/renderer/index.html'),
-          popup:  resolve(__dirname, 'src/renderer/popup.html'),
-          prices: resolve(__dirname, 'src/renderer/prices.html'),
+          index:            resolve(__dirname, 'src/renderer/index.html'),
+          popup:            resolve(__dirname, 'src/renderer/popup.html'),
+          prices:           resolve(__dirname, 'src/renderer/prices.html'),
           'scheduled-runs': resolve(__dirname, 'src/renderer/scheduled-runs.html'),
         }
       }
