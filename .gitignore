@@ -17,9 +17,29 @@ __pycache__/
 *.pyc
 *.pyo
 
+# Logs
+*.log
+app-debug.log
+electron/logs/
+
+# Python env
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.env
+
 # Claude Code
 .claude/
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
