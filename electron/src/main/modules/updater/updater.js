@@ -5,7 +5,7 @@ const { spawn } = require('child_process')
 const { app, dialog } = require('electron')
 
 const GITHUB_OWNER = 'Zedrok'
-const GITHUB_REPO  = 'bakers-raid-releases'
+const GITHUB_REPO  = 'wowadv-releases'
 
 let mainWindow = null
 
