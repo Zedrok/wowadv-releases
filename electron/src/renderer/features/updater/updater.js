@@ -217,13 +217,12 @@ async function checkForUpdatesAtStartup() {
 
 async function showChangelogIfNew() {
   try {
-    // Get changelog from main process via window.api
-    const { changelog, getChangesSince } = await window.api.getChangelog()
     const lastSeenVersion = await window.api.getLastSeenChangelogVersion()
-    const changesNew = getChangesSince(lastSeenVersion)
+    // Get changelog with changes since last seen version
+    const { changelog, changesSince } = await window.api.getChangelog(lastSeenVersion)
 
-    if (changesNew.length > 0) {
-      showChangelogModal(changesNew)
+    if (changesSince && changesSince.length > 0) {
+      showChangelogModal(changesSince)
       // Mark current version as seen
       const latestChangelogEntry = changelog[0]
       if (latestChangelogEntry) {

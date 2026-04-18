@@ -32,7 +32,7 @@ contextBridge.exposeInMainWorld('api', {
   checkForUpdates:() => ipcRenderer.invoke('check-for-updates'),
   getLastSeenChangelogVersion: () => ipcRenderer.invoke('get-last-seen-changelog-version'),
   updateLastSeenChangelogVersion: (v) => ipcRenderer.invoke('update-last-seen-changelog-version', v),
-  getChangelog:   () => ipcRenderer.invoke('get-changelog'),
+  getChangelog:   (sinceVersion) => ipcRenderer.invoke('get-changelog', sinceVersion),
 
   onSwitchTab:    (cb) => ipcRenderer.on('switch-tab',      (_, t) => cb(t)),
   onRaidsData:    (cb) => ipcRenderer.on('raids-data',      (_, d) => cb(d)),
