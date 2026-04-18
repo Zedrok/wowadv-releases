@@ -26,7 +26,15 @@ jobs:
       - name: Build application
         shell: bash
         working-directory: ./electron
-        run: npm run dist
+        run: |
+          # Retry up to 3 times for network errors
+          for i in 1 2 3; do
+            echo "Build attempt $i..."
+            npm run dist && exit 0
+            echo "Build failed, retrying..."
+            sleep $((i * 10))
+          done
+          exit 1
 
       - name: Extract version from package.json
         id: version
