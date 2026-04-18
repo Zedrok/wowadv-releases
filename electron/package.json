@@ -18,7 +18,9 @@
     },
     "asar": false,
     "files": [
-      "out/**/*"
+      "out/**/*",
+      "!**/ffmpeg.dll",
+      "!**/ffprobe.dll"
     ],
     "extraResources": [
       {
