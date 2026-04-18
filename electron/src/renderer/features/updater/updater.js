@@ -10,7 +10,7 @@ let pendingChanges = null
 export async function initUpdater() {
   // Get current version on startup
   const versionData = await window.api.getAppVersion()
-  currentVersion = versionData.version
+  currentVersion = versionData
 
   // Listen for update progress
   window.api.onUpdateProgress((data) => {

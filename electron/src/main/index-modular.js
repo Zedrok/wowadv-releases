@@ -96,7 +96,35 @@ app.whenReady().then(() => {
     }
 
     writeLog('Creating main window...')
-    // Create main window
+
+    // Setup modules
+    scraperModule.setMainWindow(null) // Will be set after window creation
+    watcherModule.setMainWindow(null)
+    updaterModule.setMainWindow(null)
+
+    // Setup windows manager for IPC
+    const winConfig = {
+      main: null, // Will be set below
+      openNextRuns: () => WindowsManager.createNextRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
+      openPrices: () => WindowsManager.createPrices(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
+      openScheduledRuns: () => WindowsManager.createScheduledRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
+    }
+
+    // Register all IPC handlers BEFORE creating window so they're ready immediately
+    registerHandlers({
+      scraperModule,
+      watcherModule,
+      updaterModule,
+      windows: winConfig,
+      root: ROOT,
+      dataDir: DATA_DIR,
+      flagFile: FLAG_FILE,
+      openUrlFlag: OPEN_URL_FLAG,
+      raidsPath: RAIDS_JSON,
+      pricesPath: PRICES_JSON,
+    })
+
+    // Create main window AFTER handlers are registered
     const mainWin = WindowsManager.createMain(
       IS_DEV,
       IS_DEV ? process.env['ELECTRON_RENDERER_URL'] : null
@@ -105,33 +133,12 @@ app.whenReady().then(() => {
     writeLog('ROOT (for scraper): ' + ROOT)
     writeLog('PYTHON_SCRIPT: ' + PYTHON_SCRIPT)
 
-  // Setup modules
-  scraperModule.setMainWindow(mainWin)
-  watcherModule.setMainWindow(mainWin)
-  updaterModule.setMainWindow(mainWin)
-
-  // Setup windows manager for IPC
-  const winConfig = {
-    main: mainWin,
-    openNextRuns: () => WindowsManager.createNextRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
-    openPrices: () => WindowsManager.createPrices(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
-    openScheduledRuns: () => WindowsManager.createScheduledRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
-  }
-  // Note: nextRuns window reference is updated in handlers.js when window opens
-
-  // Register all IPC handlers first (tray after)
-  registerHandlers({
-    scraperModule,
-    watcherModule,
-    updaterModule,
-    windows: winConfig,
-    root: ROOT,
-    dataDir: DATA_DIR,
-    flagFile: FLAG_FILE,
-    openUrlFlag: OPEN_URL_FLAG,
-    raidsPath: RAIDS_JSON,
-    pricesPath: PRICES_JSON,
-  })
+    // Now update module references with actual window
+    scraperModule.setMainWindow(mainWin)
+    watcherModule.setMainWindow(mainWin)
+    updaterModule.setMainWindow(mainWin)
+    alarmScheduler.setMainWindow(mainWin)
+    winConfig.main = mainWin
 
   // Setup tray icon (after IPC handlers registered)
   try {

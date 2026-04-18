@@ -7,7 +7,12 @@ function registerHandlers(config) {
   const buyersStorage = require('../storage/buyersStorage')
   const preferencesStorage = require('../storage/preferencesStorage')
   const alarmScheduler = require('../alarm/scheduler')
-  const changelog = require(path.join(__dirname, '../updater/changelog'))
+
+  // In dev mode, changelog.js doesn't get compiled by Vite, so require from src
+  const changelogPath = process.env.NODE_ENV === 'development'
+    ? path.join(process.cwd(), 'src/main/modules/updater/changelog')
+    : path.join(__dirname, '../updater/changelog')
+  const changelog = require(changelogPath)
 
   scraperModule.setWindowsRef(windows)
   alarmScheduler.setMainWindow(windows.main)

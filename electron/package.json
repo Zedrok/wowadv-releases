@@ -1,6 +1,6 @@
 {
   "name": "bakers-raid-monitor",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "Live monitor for thebakers.work raids",
   "main": "out/main/index-modular.js",
   "scripts": {

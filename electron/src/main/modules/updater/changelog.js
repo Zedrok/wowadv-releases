@@ -5,6 +5,15 @@
 
 const changelog = [
   {
+    version: '1.2.3',
+    date: '18 de abril de 2026',
+    changes: [
+      '✨ Versión del app visible en la esquina superior izquierda',
+      '🔧 Corregido timing de registración de handlers IPC en desarrollo',
+      '🎨 Reducido espaciado vertical entre título y versión'
+    ]
+  },
+  {
     version: '1.2.2',
     date: '18 de abril de 2026',
     changes: [

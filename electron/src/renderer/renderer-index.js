@@ -508,5 +508,13 @@ if (filters.filters.mostrarAnteriores) {
 window.api.requestData()
 console.log('requestData called')
 
+// Populate app version in titlebar
+window.api.getAppVersion().then(version => {
+  const appVersionEl = document.getElementById('appVersion')
+  if (appVersionEl && version) {
+    appVersionEl.textContent = 'v' + version
+  }
+}).catch(e => console.error('Error getting app version:', e))
+
 // Mark autostart as completed to enable Start button
 scraper.setAutoStartCompleted()
