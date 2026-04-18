@@ -616,6 +616,8 @@ body { display: flex; flex-direction: column; }
   overflow-y: auto;
   white-space: pre-wrap;
   word-wrap: break-word;
+  user-select: text;
+  cursor: text;
 }
 
 .log-panel[hidden] {

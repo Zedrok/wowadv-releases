@@ -6,12 +6,15 @@
 const changelog = [
   {
     version: '1.1.0',
-    date: 'April 17, 2026',
+    date: 'April 18, 2026',
     changes: [
-      'Added glow effect to scraper status indicator light',
-      'Fixed price matching for Unsaved vs Saved raids in Next Runs popup',
-      'Corrected hover tooltip display to show correct prices per raid type',
-      'Improved scraper indicator visibility with multi-layer shadow glow'
+      '🔊 Fixed audio playback for alarm previews and notifications',
+      '🎵 Added 5 new alarm sounds: Bell Chime, Alarm Bells, Notification Ding, Marimba Bubble, Marimba Swoop',
+      '⏰ Implemented scheduled runs window with full alarm management',
+      '👁️ Moved "Actualizado:" timestamp to right of scraper status indicator',
+      '🔒 Hidden DevTools console for production builds',
+      '🌐 Fixed Discord OAuth headless mode for automated authentication',
+      '📋 Added changelog modal on startup for unseen versions'
     ]
   },
   {

@@ -60,13 +60,16 @@ function loadAndSendRaids(raidsPath) {
   try {
     const raw  = fs.readFileSync(raidsPath, 'utf8')
     const json = JSON.parse(raw)
-    if (json.data && Array.isArray(json.data)) {
-      const payload = {
-        ...json,
-        timestamp: new Date().toLocaleString('es-ES')
-      }
-      broadcastEvent('raids-data', payload)
+
+    // Ensure data is always an array (empty if not present)
+    const data = Array.isArray(json.data) ? json.data : []
+
+    const payload = {
+      ...json,
+      data: data,
+      timestamp: new Date().toLocaleString('es-ES')
     }
+    broadcastEvent('raids-data', payload)
   } catch (_) {}
 }
 

@@ -11,7 +11,8 @@ const DEFAULT_PREFERENCES = {
   pushNotificationsEnabled: true,
   defaultSound: null,
   defaultMinutesBefore: 15,
-  alarms: []
+  alarms: [],
+  lastSeenChangelogVersion: null
 }
 
 // Helper: generate UUID
@@ -162,6 +163,20 @@ function migrateAlarmsUrl() {
   return prefs
 }
 
+// Get last seen changelog version
+function getLastSeenChangelogVersion() {
+  const prefs = loadPreferences()
+  return prefs.lastSeenChangelogVersion || null
+}
+
+// Update last seen changelog version
+function updateLastSeenChangelogVersion(version) {
+  const prefs = loadPreferences()
+  prefs.lastSeenChangelogVersion = version
+  savePreferences(prefs)
+  return prefs
+}
+
 module.exports = {
   loadPreferences,
   savePreferences,
@@ -175,5 +190,7 @@ module.exports = {
   deleteAlarm,
   cleanExpiredAlarms,
   migrateAlarmsUrl,
+  getLastSeenChangelogVersion,
+  updateLastSeenChangelogVersion,
   DEFAULT_PREFERENCES
 }

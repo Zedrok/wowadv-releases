@@ -35,6 +35,9 @@ export async function initUpdater() {
 
   // Check for updates on startup (every 6 hours)
   checkForUpdatesAtStartup()
+
+  // Show changelog if user hasn't seen current version
+  showChangelogIfNew()
 }
 
 async function checkForUpdates() {
@@ -209,6 +212,26 @@ async function checkForUpdatesAtStartup() {
     }
   } catch (error) {
     console.error('Error checking for updates on startup:', error)
+  }
+}
+
+async function showChangelogIfNew() {
+  try {
+    // Get changelog from main process via window.api
+    const { changelog, getChangesSince } = await window.api.getChangelog()
+    const lastSeenVersion = await window.api.getLastSeenChangelogVersion()
+    const changesNew = getChangesSince(lastSeenVersion)
+
+    if (changesNew.length > 0) {
+      showChangelogModal(changesNew)
+      // Mark current version as seen
+      const latestChangelogEntry = changelog[0]
+      if (latestChangelogEntry) {
+        await window.api.updateLastSeenChangelogVersion(latestChangelogEntry.version)
+      }
+    }
+  } catch (error) {
+    console.error('Error showing changelog:', error)
   }
 }
 

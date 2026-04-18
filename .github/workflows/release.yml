@@ -19,10 +19,12 @@ jobs:
           node-version: '22'
 
       - name: Install dependencies
+        shell: bash
         working-directory: ./electron
         run: npm ci
 
       - name: Build application
+        shell: bash
         working-directory: ./electron
         run: npm run dist
 

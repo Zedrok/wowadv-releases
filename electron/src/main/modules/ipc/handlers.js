@@ -65,9 +65,12 @@ function registerHandlers(config) {
     try { fs.writeFileSync(FAV_LISTS_FILE, JSON.stringify(lists)) } catch (_) {}
   })
 
-  // Updates
+  // Updates & Changelog
   ipcMain.handle('get-app-version', () => require('electron').app.getVersion())
   ipcMain.handle('check-for-updates', () => updaterModule.checkAndShowUpdate(false))
+  ipcMain.handle('get-last-seen-changelog-version', () => preferencesStorage.getLastSeenChangelogVersion())
+  ipcMain.handle('update-last-seen-changelog-version', (_, version) => preferencesStorage.updateLastSeenChangelogVersion(version))
+  ipcMain.handle('get-changelog', () => require('../updater/changelog'))
 
   // Buyer & Alarm System
   ipcMain.handle('save-buyer-record', (_, data) => {
