@@ -45,7 +45,7 @@ try {
 
   // Copy result
   const tempExe = path.join(tempElectronDir, 'dist', 'Bakers Raid Monitor 1.0.0.exe');
-  const finalExe = path.join(distDir, 'Bakers Raid Monitor 1.0.0.exe');
+  const finalExe = path.join(distDir, 'Bakers Raid Monitor.exe');
 
   if (fs.existsSync(tempExe)) {
     fs.copyFileSync(tempExe, finalExe);
