@@ -43,4 +43,4 @@ jobs:
           token: ${{ secrets.RELEASES_TOKEN }}
           repository: Zedrok/wowadv-releases
           files: |
-            electron/dist/win-unpacked/Bakers Raid Monitor.exe
+            electron/dist/Bakers Raid Monitor.exe
