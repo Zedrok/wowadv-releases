@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   deleteAlarm: (id) => ipcRenderer.send('delete-alarm', id),
   markAlarmContacted: (id) => ipcRenderer.send('mark-alarm-contacted', id),
   openUrl: (url) => ipcRenderer.send('open-url', url),
+  playPreviewSound: (path) => ipcRenderer.invoke('play-preview-sound', path),
 
   // Event listeners
   onAlarmTriggered: (callback) => ipcRenderer.on('alarm-triggered', (_, id) => callback(id)),
@@ -16,4 +17,5 @@ contextBridge.exposeInMainWorld('api', {
   onAlarmContacted: (callback) => ipcRenderer.on('alarm-contacted', (_, id) => callback(id)),
   onPreferencesUpdated: (callback) => ipcRenderer.on('preferences-updated', (_, prefs) => callback(prefs)),
   onReloadAlarms: (callback) => ipcRenderer.on('reload-alarms', () => callback()),
+  onPlayAudio: (callback) => ipcRenderer.on('play-audio', (_, filePath) => callback(filePath)),
 })

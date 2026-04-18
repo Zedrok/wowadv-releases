@@ -1,10 +1,12 @@
 const { Notification, BrowserWindow } = require('electron')
 const { spawn } = require('child_process')
 const path = require('path')
+const fs = require('fs')
 const preferencesStorage = require('../storage/preferencesStorage')
 
 let schedulerInterval = null
 let scheduledRunsWindow = null
+let mainWindow = null
 
 class AlarmScheduler {
   constructor() {
@@ -129,44 +131,27 @@ class AlarmScheduler {
       let resolvedPath = filePath
       if (filePath.startsWith('../')) {
         const cleanPath = filePath.replace(/^\.\.\//, '')
-        // __dirname is electron/src/main/modules/alarm
-        // Go up 3 levels to electron/, then add assets/sounds/...
         resolvedPath = path.join(__dirname, '../../../', cleanPath)
+
+        // Fallback for portable builds where assets are in out/renderer/assets/
+        if (!fs.existsSync(resolvedPath)) {
+          const portablePath = path.join(__dirname, '../../../../out/renderer/assets', cleanPath)
+          if (fs.existsSync(portablePath)) {
+            resolvedPath = portablePath
+          }
+        }
       }
 
-      console.log(`[AlarmScheduler] Playing sound: ${filePath} → ${resolvedPath}`)
+      console.log(`[AlarmScheduler] Playing sound via renderer: ${resolvedPath}`)
 
-      // Try ffplay first (ffmpeg) - plays audio silently without window
-      // Then fallback to powershell SoundPlayer for WAV/common formats
-      // Then fallback to system beep
-
-      const child = spawn('ffplay', [
-        '-nodisp',      // No display window
-        '-autoexit',    // Auto exit when done
-        '-loglevel', 'quiet',  // No logging
-        resolvedPath
-      ], { windowsHide: true })
-
-      let played = false
-      child.on('close', (code) => {
-        if (code === 0) {
-          played = true
-          console.log('[AlarmScheduler] Sound played successfully with ffplay')
-        }
-      })
-
-      child.on('error', (err) => {
-        if (!played) {
-          console.error('[AlarmScheduler] ffplay failed:', err.message)
-          // Fallback: system beep
-          const fallback = spawn('powershell.exe', [
-            `-NoProfile`,
-            `-Command`,
-            `[System.Media.SystemSounds]::Exclamation.Play()`
-          ], { windowsHide: true })
-          fallback.on('error', (e) => console.error('[AlarmScheduler] Fallback error:', e.message))
-        }
-      })
+      // Send to renderer to play via Web Audio API (Chromium supports OGG natively)
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('play-audio', resolvedPath)
+      } else if (scheduledRunsWindow && !scheduledRunsWindow.isDestroyed()) {
+        scheduledRunsWindow.webContents.send('play-audio', resolvedPath)
+      } else {
+        console.warn('[AlarmScheduler] No window available to play audio')
+      }
     } catch (e) {
       console.error('[AlarmScheduler] Exception playing sound:', e.message)
     }
@@ -237,6 +222,13 @@ class AlarmScheduler {
    */
   setScheduledRunsWindow(window) {
     scheduledRunsWindow = window
+  }
+
+  /**
+   * Set the main window reference (for playing audio in renderer)
+   */
+  setMainWindow(win) {
+    mainWindow = win
   }
 
   /**

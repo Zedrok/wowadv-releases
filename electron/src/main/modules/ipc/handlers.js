@@ -9,6 +9,7 @@ function registerHandlers(config) {
   const alarmScheduler = require('../alarm/scheduler')
 
   scraperModule.setWindowsRef(windows)
+  alarmScheduler.setMainWindow(windows.main)
 
   // Scraper control
   ipcMain.on('start-scraper', () => scraperModule.start(config.root, config.dataDir))
@@ -19,8 +20,11 @@ function registerHandlers(config) {
   ipcMain.on('request-data', () => {
     const data = watcherModule.getRaids(config.raidsPath)
     if (windows.main && !windows.main.isDestroyed()) {
+      // Ensure data.data is always an array
+      const raidData = Array.isArray(data?.data) ? data.data : []
       windows.main.webContents.send('raids-data', {
         ...data,
+        data: raidData,
         timestamp: new Date().toLocaleString('es-ES')
       })
     }
@@ -140,14 +144,14 @@ function registerHandlers(config) {
     // Resolve relative paths from electron directory
     let resolvedPath = filePath
     if (filePath.startsWith('../')) {
-      // Path like '../assets/sounds/notification-0.ogg'
-      // __dirname is electron/src/main/modules/ipc
-      // Go up 4 levels to electron/, then add assets/sounds/...
       const cleanPath = filePath.replace(/^\.\.\//, '')
-      resolvedPath = path.join(__dirname, '../../../../', cleanPath)
+      resolvedPath = path.join(__dirname, '../../../', cleanPath)
     }
     console.log(`[IPC] Playing preview sound: ${filePath} → ${resolvedPath}`)
-    alarmScheduler.playSound(resolvedPath)
+    // Send to renderer to play via Web Audio API
+    if (windows.main && !windows.main.isDestroyed()) {
+      windows.main.webContents.send('play-audio', resolvedPath)
+    }
     return true
   })
 

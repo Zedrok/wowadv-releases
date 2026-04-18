@@ -243,6 +243,58 @@
       background: rgba(255, 107, 107, 0.1);
     }
 
+    .select-preview {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+
+    .select-preview select {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 11px;
+      padding: 4px 6px;
+      min-height: 40px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .select-preview select:hover {
+      border-color: var(--gold);
+    }
+
+    .select-preview select:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .btn-preview {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      min-height: 40px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-preview:hover {
+      background: #22223a;
+      color: var(--text);
+      border-color: var(--gold);
+    }
+
+    .btn-preview:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
     .empty-state {
       text-align: center;
       padding: 30px 20px;
@@ -268,6 +320,16 @@
       <button class="toggle-btn active" id="btnSound" title="Sonido">
         <i class="fa-solid fa-volume-high"></i> Sonido
       </button>
+      <div class="select-preview">
+        <select id="fAlarmSound">
+          <option value="../assets/sounds/bell-chime.mp3" selected>Bell Chime</option>
+          <option value="../assets/sounds/alarm-bells.mp3">Alarm Bells</option>
+          <option value="../assets/sounds/notification-ding.mp3">Notification Ding</option>
+          <option value="../assets/sounds/marimba-bubble.mp3">Marimba Bubble</option>
+          <option value="../assets/sounds/marimba-swoop.mp3">Marimba Swoop</option>
+        </select>
+        <button type="button" class="btn-preview" title="Preview del sonido">▶ Escuchar</button>
+      </div>
       <button class="toggle-btn active" id="btnNotifications" title="Notificaciones">
         <i class="fa-solid fa-bell"></i> Notificaciones
       </button>

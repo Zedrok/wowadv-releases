@@ -10,6 +10,30 @@ const btnSound = document.getElementById('btnSound')
 const btnNotifications = document.getElementById('btnNotifications')
 const btnClear = document.getElementById('btnClear')
 
+// ── Audio playback via Web Audio API ───────────────────────────
+window.api.onPlayAudio(filePath => {
+  try {
+    const url = filePath.startsWith('file://') ? filePath : `file:///${filePath.replace(/\\/g, '/')}`
+    const audio = new Audio(url)
+    audio.play().catch(e => console.error('[Audio] Play error:', e))
+  } catch (e) {
+    console.error('[Audio] Exception:', e)
+  }
+})
+
+// Preview button click handler
+const btnPreview = document.querySelector('.btn-preview')
+const soundSelect = document.getElementById('fAlarmSound')
+if (btnPreview) {
+  btnPreview.addEventListener('click', async () => {
+    try {
+      await window.api.playPreviewSound(soundSelect.value)
+    } catch (err) {
+      console.error('[ScheduledRuns] Error playing preview sound:', err)
+    }
+  })
+}
+
 /**
  * Load preferences and alarms from main process
  */

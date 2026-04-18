@@ -38,4 +38,5 @@ contextBridge.exposeInMainWorld('api', {
   onScraperStatus:(cb) => ipcRenderer.on('scraper-status',  (_, d) => cb(d)),
   onScraperLog:   (cb) => ipcRenderer.on('scraper-log',     (_, d) => cb(d)),
   onShowLogs:     (cb) => ipcRenderer.on('show-logs',       ()     => cb()),
+  onPlayAudio:    (cb) => ipcRenderer.on('play-audio',      (_, p) => cb(p)),
 })

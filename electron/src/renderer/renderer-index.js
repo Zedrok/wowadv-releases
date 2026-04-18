@@ -274,11 +274,29 @@ function openUrl(url) {
   window.api.openUrl(url)
 }
 
+// ── Audio playback via Web Audio API ───────────────────────────
+window.api.onPlayAudio(filePath => {
+  try {
+    const url = filePath.startsWith('file://') ? filePath : `file:///${filePath.replace(/\\/g, '/')}`
+    const audio = new Audio(url)
+    audio.play().catch(e => console.error('[Audio] Play error:', e))
+  } catch (e) {
+    console.error('[Audio] Exception:', e)
+  }
+})
+
 // ── IPC Listeners ──────────────────────────────────────────────
 window.api.onRaidsData(payload => {
   try {
     console.log('onRaidsData received:', payload)
     const { data, timestamp } = payload
+
+    // Validate data is an array before accessing .length
+    if (!Array.isArray(data)) {
+      console.error('Invalid raids data received - not an array:', typeof data, data)
+      return
+    }
+
     console.log('Starting computeFlashes with', data.length, 'rows')
     table.computeFlashes(data, prevMap)
     console.log('computeFlashes done')

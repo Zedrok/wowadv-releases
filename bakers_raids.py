@@ -78,7 +78,7 @@ def restore_session(page):
         try:
             page.wait_for_url(lambda u: u.rstrip("/").endswith("/home"), timeout=15000)
             print("Sesión restaurada.")
-            return
+            return False  # No new login (session restored)
         except Exception:
             print("Token expirado. Iniciando nuevo login...")
             os.remove(TOKEN_FILE)
@@ -95,6 +95,7 @@ def restore_session(page):
         print("Token guardado.")
 
     page.wait_for_url(lambda u: u.rstrip("/").endswith("/home"), timeout=30000)
+    return True  # New login completed (browser should close)
 
 
 def refresh_prices_with_playwright(context, on_response):
@@ -170,12 +171,25 @@ def main():
                 print(f"  [API prices] Error: {e}")
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(channel="msedge", headless=True)
+        # Check if token exists: launch headed if missing (for Discord auth), headless if valid
+        token_exists = os.path.exists(TOKEN_FILE)
+        headless_mode = token_exists
+        browser = p.chromium.launch(channel="msedge", headless=headless_mode)
         context = browser.new_context()
         context.add_init_script(STEALTH_SCRIPT)
         page = context.new_page()
 
-        restore_session(page)
+        login_completed = restore_session(page)
+
+        # If login just completed in headed mode, close browser and reopen in headless for scraping
+        if login_completed and not headless_mode:
+            print("Login completado. Cerrando navegador de autenticación...")
+            browser.close()
+            print("Reabriendo navegador en modo headless para scraping...")
+            browser = p.chromium.launch(channel="msedge", headless=True)
+            context = browser.new_context()
+            context.add_init_script(STEALTH_SCRIPT)
+            page = context.new_page()
 
         page.on("response", on_response)
 
