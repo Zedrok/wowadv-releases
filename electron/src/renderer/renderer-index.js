@@ -507,3 +507,6 @@ if (filters.filters.mostrarAnteriores) {
 
 window.api.requestData()
 console.log('requestData called')
+
+// Mark autostart as completed to enable Start button
+scraper.setAutoStartCompleted()

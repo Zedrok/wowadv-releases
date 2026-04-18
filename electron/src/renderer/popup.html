@@ -426,10 +426,10 @@
     .filter-chip.chip-saved { background: rgba(58,48,32,.4); color: var(--saved-fg); border-color: var(--saved-acc); }
     .filter-chip.hidden-chip { opacity: 0.35; background: transparent; color: var(--text-dim); border-color: var(--border); text-decoration: line-through; }
 
-    /* Scrollbar */
-    ::-webkit-scrollbar            { width: 4px; }
-    ::-webkit-scrollbar-track      { background: var(--bg); }
-    ::-webkit-scrollbar-thumb      { background: #2a2a4a; border-radius: 4px; }
+    /* Scrollbar — hidden but scrollable */
+    ::-webkit-scrollbar            { width: 0; }
+    ::-webkit-scrollbar-track      { display: none; }
+    ::-webkit-scrollbar-thumb      { display: none; }
   </style>
 </head>
 <body>

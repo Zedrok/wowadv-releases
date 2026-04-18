@@ -1,5 +1,14 @@
 export let scraperOn = false
 export let scraperLoading = false
+export let autoStartCompleted = false
+
+export function setAutoStartCompleted() {
+  autoStartCompleted = true
+  const btnToggle = document.getElementById('btnToggleScraper')
+  if (btnToggle) {
+    btnToggle.disabled = false
+  }
+}
 
 export function setScraperState(running, loading = false) {
   scraperOn = running
@@ -18,12 +27,17 @@ export function setScraperState(running, loading = false) {
 
   if (btnToggle) {
     // Three states: Loading, Running, Stopped
-    btnToggle.disabled = loading
+    // Disable if loading OR if autostart hasn't completed yet
+    btnToggle.disabled = loading || !autoStartCompleted
     btnToggle.classList.toggle('btn-loading', loading)
-    btnToggle.classList.toggle('btn-gold', !running && !loading)
+    btnToggle.classList.toggle('btn-gold', !running && !loading && autoStartCompleted)
     btnToggle.classList.toggle('btn-danger', running && !loading)
 
-    btnToggle.title = loading ? 'Iniciando scraper...' : (running ? 'Detener scraper' : 'Iniciar scraper')
+    if (!autoStartCompleted) {
+      btnToggle.title = 'Esperando inicialización del sistema...'
+    } else {
+      btnToggle.title = loading ? 'Iniciando scraper...' : (running ? 'Detener scraper' : 'Iniciar scraper')
+    }
 
     if (btnIcon) {
       btnIcon.className = loading ? 'fa-solid fa-spinner' : (running ? 'fa-solid fa-stop' : 'fa-solid fa-play')
