@@ -5,6 +5,15 @@
 
 const changelog = [
   {
+    version: '1.2.1',
+    date: 'April 18, 2026',
+    changes: [
+      '🐛 Fixed changelog modal display in packaged app',
+      '🔄 Fixed auto-updater GitHub repository reference',
+      '📦 Ensured all required modules are copied to build output'
+    ]
+  },
+  {
     version: '1.2.0',
     date: 'April 18, 2026',
     changes: [
