@@ -7,7 +7,7 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite preview",
-    "dist": "electron-vite build && electron-builder --win portable --publish=never"
+    "dist": "node ../build.js"
   },
   "build": {
     "appId": "com.bakers.raid-monitor",
