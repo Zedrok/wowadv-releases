@@ -7,6 +7,7 @@ function registerHandlers(config) {
   const buyersStorage = require('../storage/buyersStorage')
   const preferencesStorage = require('../storage/preferencesStorage')
   const alarmScheduler = require('../alarm/scheduler')
+  const changelog = require(path.join(__dirname, '../updater/changelog'))
 
   scraperModule.setWindowsRef(windows)
   alarmScheduler.setMainWindow(windows.main)
@@ -70,7 +71,7 @@ function registerHandlers(config) {
   ipcMain.handle('check-for-updates', () => updaterModule.checkAndShowUpdate(false))
   ipcMain.handle('get-last-seen-changelog-version', () => preferencesStorage.getLastSeenChangelogVersion())
   ipcMain.handle('update-last-seen-changelog-version', (_, version) => preferencesStorage.updateLastSeenChangelogVersion(version))
-  ipcMain.handle('get-changelog', () => require('../updater/changelog'))
+  ipcMain.handle('get-changelog', () => changelog)
 
   // Buyer & Alarm System
   ipcMain.handle('save-buyer-record', (_, data) => {
