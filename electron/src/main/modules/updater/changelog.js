@@ -5,6 +5,15 @@
 
 const changelog = [
   {
+    version: '1.2.0',
+    date: 'April 18, 2026',
+    changes: [
+      '🎨 Hidden scrollbar in Próximos Runs popup (scrollable but invisible)',
+      '🔒 Disabled Start button until autostart completes (prevents double execution)',
+      '✨ Improved UX with better state management for scraper initialization'
+    ]
+  },
+  {
     version: '1.1.0',
     date: 'April 18, 2026',
     changes: [
