@@ -14,7 +14,16 @@ contextBridge.exposeInMainWorld('api', {
 
   openNextRuns:   () => ipcRenderer.send('open-next-runs'),
   openPrices:     () => ipcRenderer.send('open-prices'),
+  openScheduledRuns: () => ipcRenderer.send('open-scheduled-runs'),
   openUrl:        (url) => ipcRenderer.send('open-url', url),
+
+  saveBuyerRecord: (data) => ipcRenderer.invoke('save-buyer-record', data),
+  getSavedBuyers:  () => ipcRenderer.invoke('get-saved-buyers'),
+  deleteBuyer:     (id) => ipcRenderer.send('delete-buyer', id),
+  scheduleAlarm:   (data) => ipcRenderer.invoke('schedule-alarm', data),
+  getAlarmPreferences: () => ipcRenderer.invoke('get-alarm-preferences'),
+  saveAlarmPreferences: (data) => ipcRenderer.send('save-alarm-preferences', data),
+  playPreviewSound: (path) => ipcRenderer.invoke('play-preview-sound', path),
 
   getFavLists:    () => ipcRenderer.invoke('get-fav-lists'),
   saveFavLists:   (lists) => ipcRenderer.send('save-fav-lists', lists),

@@ -69,7 +69,7 @@ export function populateDropdowns(rows) {
   const fRaids = document.getElementById('fRaids')
   const fTeam = document.getElementById('fTeam')
 
-  populateSelect(fDay, rows.map(r => r.date), filters.day)
+  populateSelectByDate(fDay, rows.map(r => r.date), filters.day)
   populateSelect(fDifficulty, rows.map(r => r.difficulty), filters.difficulty)
   populateSelect(fTipo, rows.map(r => r.type), filters.tipo)
   populateSelect(fLoot, rows.map(r => r.loot), filters.loot)
@@ -83,6 +83,30 @@ export function populateDropdowns(rows) {
     })
   })
   populateSelect(fRaids, raidSet, filters.raids)
+}
+
+function populateSelectByDate(el, values, current) {
+  const first = el.options[0]
+  el.innerHTML = ''
+  el.appendChild(first)
+
+  const uniqueDates = [...new Set(values)].filter(Boolean)
+  const today = new Date()
+
+  uniqueDates.sort((a, b) => {
+    const dateA = parseRaidToDate(a)
+    const dateB = parseRaidToDate(b)
+    if (!dateA || !dateB) return 0
+    return dateA.getTime() - dateB.getTime()
+  })
+
+  uniqueDates.forEach(v => {
+    const opt = document.createElement('option')
+    opt.value = v
+    opt.textContent = v
+    if (v === current) opt.selected = true
+    el.appendChild(opt)
+  })
 }
 
 function populateSelect(el, values, current) {
@@ -113,20 +137,7 @@ export function updateFilterUI() {
   fDifficulty.value  = filters.difficulty
   fTipo.value        = filters.tipo
   fLoot.value        = filters.loot
-
-  // Update lock checkbox and icon
-  const isUnlocked = filters.lock === 'Unlocked'
-  fLock.checked = isUnlocked
-  const lockIcon = document.getElementById('lockIcon')
-  const lockText = document.getElementById('lockText')
-  if (isUnlocked) {
-    lockIcon.className = 'fa-solid fa-lock-open'
-    lockText.textContent = 'Unlocked'
-  } else {
-    lockIcon.className = 'fa-solid fa-lock'
-    lockText.textContent = 'Locked'
-  }
-
+  fLock.checked      = filters.lock === 'Unlocked'
   fRaids.value       = filters.raids
   document.getElementById('fTeam').value            = filters.team
   document.getElementById('fDisponibles').checked   = filters.soloDisponibles

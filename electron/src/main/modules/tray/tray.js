@@ -33,6 +33,7 @@ function createTray(windows) {
     { type: 'separator' },
     { label: 'Open Prices', click: () => windows.openPrices() },
     { label: 'Open Next Runs', click: () => windows.openNextRuns() },
+    { label: 'Runs Agendados', click: () => windows.openScheduledRuns() },
     { type: 'separator' },
     {
       label: 'Quit',
@@ -65,6 +66,7 @@ function createTray(windows) {
       { type: 'separator' },
       { label: 'Open Prices', click: () => windows.openPrices() },
       { label: 'Open Next Runs', click: () => windows.openNextRuns() },
+      { label: 'Runs Agendados', click: () => windows.openScheduledRuns() },
       { type: 'separator' },
       {
         label: 'Quit',
@@ -89,6 +91,7 @@ function createTray(windows) {
       { type: 'separator' },
       { label: 'Open Prices', click: () => windows.openPrices() },
       { label: 'Open Next Runs', click: () => windows.openNextRuns() },
+      { label: 'Runs Agendados', click: () => windows.openScheduledRuns() },
       { type: 'separator' },
       {
         label: 'Quit',

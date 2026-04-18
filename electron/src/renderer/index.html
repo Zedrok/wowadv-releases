@@ -22,6 +22,7 @@
     <div class="titlebar-left">
       <i class="fa-solid fa-shield-halved titlebar-icon"></i>
       <span class="app-title">Baker's Raid Monitor</span>
+      <span id="infoTimestamp" class="info-timestamp">—</span>
     </div>
     <div class="titlebar-right">
       <div class="status-pill" id="statusPill">
@@ -40,13 +41,6 @@
   <!-- ════════════════════════════════════════════════════════ -->
   <div id="tabRaids">
 
-    <!-- ── Info bar ── -->
-    <div class="infobar">
-      <span id="infoTimestamp">—</span>
-      <span class="spacer"></span>
-      <input type="text" id="filterInput" placeholder="Buscar..." spellcheck="false" />
-    </div>
-
     <!-- ── Filter bar ── -->
     <div class="filterbar" id="filterbar">
       <!-- Basic filters row -->
@@ -61,10 +55,9 @@
         <input type="checkbox" id="fDisponibles" />
         <span>Con espacio</span>
       </label>
-      <label class="filter-check" id="lockLabel">
-        <i class="fa-solid fa-lock-open" id="lockIcon"></i>
-        <span id="lockText">Unlocked</span>
-        <input type="checkbox" id="fLock" style="display:none" />
+      <label class="filter-check">
+        <input type="checkbox" id="fLock" checked />
+        <span>Solo Unlocked</span>
       </label>
       <span class="filter-sep"></span>
       <label class="filter-label">Dificultad
@@ -78,8 +71,7 @@
         <i class="fa-solid fa-chevron-down"></i> Más
       </button>
       <span class="spacer"></span>
-      <button class="btn btn-ghost btn-xs" id="btnResetFilters"><i class="fa-solid fa-xmark"></i> Reset</button>
-
+      <input type="text" id="filterInput" placeholder="Buscar..." spellcheck="false" />
       <!-- Advanced filters row (collapsible) -->
       <div class="filter-advanced" id="filterAdvanced" hidden>
         <label class="filter-label">Tipo
@@ -124,6 +116,54 @@
       <span class="badge full">Full</span>
       <span class="badge other">Otro</span>
     </footer>
+
+    <!-- ── Raid Modal ── -->
+    <div id="raidModalBackdrop" class="raid-modal-backdrop" hidden>
+      <div class="raid-modal-box">
+        <h3>Registrar Buyer</h3>
+        <form id="raidModalForm">
+          <div class="form-group">
+            <label for="fNickRealm">Nick-Realm</label>
+            <input type="text" id="fNickRealm" name="nickRealm" required>
+          </div>
+          <div class="form-group">
+            <label for="fBattleTag">BattleTag</label>
+            <input type="text" id="fBattleTag" name="battleTag">
+          </div>
+          <div class="form-group">
+            <label for="fMonto">Monto</label>
+            <input type="number" id="fMonto" name="monto" required>
+          </div>
+
+          <label class="checkbox-label">
+            <input type="checkbox" id="fEnableAlarm">
+            <span>Establecer alarma</span>
+          </label>
+
+          <div id="fAlarmOptions" hidden>
+            <div class="form-group">
+              <label for="fAlarmSound">Sonido</label>
+              <div class="select-preview">
+                <select id="fAlarmSound">
+                  <option value="../assets/sounds/Cheerfull.ogg">EnhanceQoL - Cheerful</option>
+                  <option value="../assets/sounds/Ring.ogg" selected>EnhanceQoL - Ring</option>
+                </select>
+                <button type="button" class="btn-preview">▶ Escuchar</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="fMinutesBefore">Minutos antes</label>
+              <input type="number" id="fMinutesBefore" value="15" min="1">
+            </div>
+          </div>
+
+          <div class="form-buttons">
+            <button type="submit" class="btn-submit">Registrar</button>
+            <button type="button" class="btn-cancel">Cerrar</button>
+          </div>
+        </form>
+      </div>
+    </div>
 
   </div><!-- /tabRaids -->
 

@@ -5,6 +5,7 @@ const fs = require('fs')
 let main = null
 let nextRuns = null
 let prices = null
+let scheduledRuns = null
 let isQuitting = false
 
 const userData = app.getPath('userData')
@@ -38,9 +39,10 @@ function createMain(isDev, rendererUrl) {
   const preloadPath = isDev ? path.join(appPath, 'out/preload/index.js') : path.join(appPath, 'preload/index.js')
   const iconPath = path.join(appPath, 'assets', 'favicon.ico')
 
-  main = new BrowserWindow({
-    width:     1440,
-    height:    780,
+  const savedSize = getSavedSize('main')
+  const config = {
+    width:     savedSize?.width || 1440,
+    height:    savedSize?.height || 780,
     minWidth:  1100,
     minHeight: 500,
     backgroundColor: '#0d0d14',
@@ -55,7 +57,9 @@ function createMain(isDev, rendererUrl) {
       preload: preloadPath,
       contextIsolation: true,
     },
-  })
+  }
+
+  main = new BrowserWindow(config)
 
   if (isDev && rendererUrl) {
     main.loadURL(rendererUrl)
@@ -70,6 +74,9 @@ function createMain(isDev, rendererUrl) {
     if (!isQuitting) {
       e.preventDefault()
       main.hide()
+    } else {
+      // Save size before closing
+      saveBounds(main, 'main')
     }
   })
 
@@ -161,6 +168,54 @@ function createPrices(isDev, rendererUrl) {
   return prices
 }
 
+function createScheduledRuns(isDev, rendererUrl) {
+  if (scheduledRuns && !scheduledRuns.isDestroyed()) {
+    if (scheduledRuns.isMinimized()) scheduledRuns.restore()
+    scheduledRuns.show()
+    scheduledRuns.focus()
+    return scheduledRuns
+  }
+
+  const appPath = app.getAppPath()
+  const preloadPath = isDev ? path.join(appPath, 'out/preload/scheduled-runs.js') : path.join(appPath, 'preload/scheduled-runs.js')
+  const iconPath = path.join(appPath, 'assets', 'favicon.ico')
+
+  const savedSize = getSavedSize('scheduledRuns')
+  const config = {
+    width:     savedSize?.width || 500,
+    height:    savedSize?.height || 600,
+    minWidth:  400,
+    minHeight: 400,
+    backgroundColor: '#0d0d14',
+    icon:      iconPath,
+    title: 'Runs Agendados',
+    webPreferences: {
+      preload: preloadPath,
+      contextIsolation: true,
+    },
+  }
+
+  scheduledRuns = new BrowserWindow(config)
+  scheduledRuns.setMenuBarVisibility(false)
+
+  if (isDev && rendererUrl) {
+    scheduledRuns.loadURL(rendererUrl + '/scheduled-runs.html')
+    scheduledRuns.webContents.openDevTools({ mode: 'detach' })
+  } else {
+    scheduledRuns.loadFile(path.join(appPath, 'renderer/scheduled-runs.html'))
+  }
+
+  // Reload data when window is shown/focused
+  scheduledRuns.on('show', () => {
+    scheduledRuns.webContents.send('reload-alarms')
+  })
+
+  // Save size on close
+  scheduledRuns.on('close', () => saveBounds(scheduledRuns, 'scheduledRuns'))
+  scheduledRuns.on('closed', () => { scheduledRuns = null })
+  return scheduledRuns
+}
+
 function closeAll() {
   if (main && !main.isDestroyed()) main.close()
 }
@@ -169,14 +224,17 @@ const windows = {
   get main() { return main },
   get nextRuns() { return nextRuns },
   get prices() { return prices },
+  get scheduledRuns() { return scheduledRuns },
   openNextRuns: () => createNextRuns(false, ''),
   openPrices: () => createPrices(false, ''),
+  openScheduledRuns: () => createScheduledRuns(false, ''),
 }
 
 module.exports = {
   createMain,
   createNextRuns,
   createPrices,
+  createScheduledRuns,
   closeAll,
   windows
 }

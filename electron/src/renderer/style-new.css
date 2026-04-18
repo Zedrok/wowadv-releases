@@ -128,16 +128,37 @@ body { display: flex; flex-direction: column; }
 }
 
 .status-pill .dot {
-  width: 6px;
-  height: 6px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--text-tertiary);
+  background: #ef4444;
   animation: pulse 2s infinite;
+  transition: background-color 200ms ease, box-shadow 200ms ease;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.7), 0 0 12px rgba(239, 68, 68, 0.4), 0 0 18px rgba(239, 68, 68, 0.2);
 }
 
-.status-pill.active .dot { background: var(--success); }
+.dot.active {
+  background: #22c55e !important;
+  animation: pulse 2s infinite;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8), 0 0 12px rgba(34, 197, 94, 0.5), 0 0 18px rgba(34, 197, 94, 0.25);
+}
 
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+.status-pill .dot.loading {
+  background: #ef4444;
+  animation: pulse-loading 1.2s infinite;
+}
+
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+@keyframes pulse-loading { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.spin {
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 
 /* ── Buttons ───────────────────────────────────────────────── */
 .btn {
@@ -167,6 +188,20 @@ body { display: flex; flex-direction: column; }
 .btn-danger { background: rgba(231, 76, 60, 0.2); color: #ffaaaa; border-color: #8b1a1a; }
 .btn-danger:hover { background: rgba(231, 76, 60, 0.3); }
 
+.btn-loading {
+  background: rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  border-color: #92400e;
+  cursor: wait;
+}
+.btn-loading:hover { background: rgba(245, 158, 11, 0.2); }
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .btn-outline { background: transparent; border-color: var(--border); }
 .btn-outline:hover { background: rgba(255, 255, 255, 0.05); }
 
@@ -185,21 +220,13 @@ body { display: flex; flex-direction: column; }
   overflow: hidden;
 }
 
-.infobar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-
-.sep { color: var(--text-tertiary); }
-
 .spacer { flex: 1; }
+
+.info-timestamp {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-left: var(--spacing-lg);
+}
 
 #filterInput {
   width: 200px;
@@ -220,7 +247,7 @@ body { display: flex; flex-direction: column; }
   display: flex;
   align-items: center;
   gap: var(--spacing-sm);
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: 6px var(--spacing-lg);
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-wrap: wrap;
@@ -417,6 +444,22 @@ body { display: flex; flex-direction: column; }
   transition: width 300ms ease-out;
 }
 
+.raid-slots--warning .raid-slots-text {
+  color: #f39c12;
+}
+
+.raid-slots--warning .raid-slots-bar-fill {
+  background: #f39c12;
+}
+
+.raid-slots--full .raid-slots-text {
+  color: #e74c3c;
+}
+
+.raid-slots--full .raid-slots-bar-fill {
+  background: #e74c3c;
+}
+
 .raid-status {
   display: flex;
   align-items: center;
@@ -512,7 +555,7 @@ body { display: flex; flex-direction: column; }
 .empty-state-icon { font-size: 32px; opacity: 0.3; }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 14px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
@@ -606,4 +649,169 @@ body { display: flex; flex-direction: column; }
   .raid-expand { font-size: 10px; }
   .filterbar { flex-direction: column; align-items: stretch; }
   .filter-label select, .filter-check { width: 100%; }
+}
+
+/* ── Raid Modal ────────────────────────────────────────────── */
+.raid-modal-backdrop {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.raid-modal-backdrop[hidden] {
+  display: none !important;
+}
+
+.raid-modal-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 24px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.raid-modal-box h3 {
+  color: var(--text-primary);
+  font-size: 16px;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  padding: 8px 10px;
+  font-size: 12px;
+  transition: border-color 0.15s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--gold);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--gold);
+}
+
+.select-preview {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.select-preview select {
+  flex: 1;
+}
+
+.btn-preview {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-preview:hover {
+  background: #22223a;
+  color: var(--text-primary);
+  border-color: var(--gold);
+}
+
+.form-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.btn-submit,
+.btn-cancel {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 4px;
+  border: none;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-submit {
+  background: var(--gold);
+  color: #000;
+}
+
+.btn-submit:hover {
+  background: #d9b857;
+}
+
+.btn-cancel {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+
+.btn-cancel:hover {
+  background: #22223a;
+  color: var(--text-primary);
+}
+
+/* Past expired raids (15+ minutes) */
+.card.past-expired,
+.raid-card.past-expired {
+  opacity: 0.5;
+  color: var(--text-tertiary);
+}
+
+.card.past-expired .card-raids,
+.raid-card.past-expired .raid-name {
+  color: var(--text-tertiary);
+}
+
+.card.past-expired .card-datetime,
+.raid-card.past-expired .raid-time-line {
+  color: #6a6a7a;
 }

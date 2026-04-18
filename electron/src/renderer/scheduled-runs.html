@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Runs Agendados</title>
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="../../assets/favicon.ico" />
+  <link rel="icon" type="image/png" sizes="32x32" href="../../assets/favicon-32x32.png" />
+  <link rel="apple-touch-icon" href="../../assets/apple-touch-icon.png" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.5.0/css/all.min.css" />
+  <style>
+    :root {
+      --bg:         #0d0d14;
+      --bg2:        #13131f;
+      --bg3:        #1a1a2a;
+      --border:     #2a2a3f;
+      --gold:       #c8a84b;
+      --green:      #4ade80;
+      --text:       #c8c8d8;
+      --text-dim:   #666688;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 13px;
+      line-height: 1.4;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .toggle-btn {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      min-height: 40px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+
+    .toggle-btn:hover {
+      background: #22223a;
+      color: var(--text);
+    }
+
+    .toggle-btn:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .toggle-btn.active {
+      color: var(--gold);
+      border-color: var(--gold);
+    }
+
+    .btn-danger {
+      background: rgba(255, 107, 107, 0.1);
+      border-color: rgba(255, 107, 107, 0.3);
+      color: #ff9999;
+    }
+
+    .btn-danger:hover {
+      background: rgba(255, 107, 107, 0.2);
+    }
+
+    /* ── Content ── */
+    .content {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .alarm-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .alarm-group-title {
+      font-size: 12px;
+      color: var(--gold);
+      font-weight: 600;
+      padding: 6px 0 4px 0;
+      border-bottom: 1px solid var(--gold);
+    }
+
+    /* ── Item Layout (Compact) ── */
+    .alarm-item {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 8px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .item-time {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--gold);
+      line-height: 1.2;
+    }
+
+    .item-character {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .item-raid {
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.8;
+    }
+
+    .item-actions {
+      display: flex;
+      flex-direction: row;
+      gap: 6px;
+      align-self: center;
+    }
+
+    /* ── Buttons ── */
+    .btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: var(--bg3);
+      color: var(--text);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: #22223a;
+      border-color: var(--gold);
+    }
+
+    .btn:focus {
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-open {
+      color: #4ade80;
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+
+    .btn-open:hover:not(:disabled) {
+      border-color: #4ade80;
+      background: rgba(74, 222, 128, 0.1);
+    }
+
+    .btn-contacted {
+      color: var(--gold);
+      border-color: rgba(200, 168, 75, 0.3);
+    }
+
+    .btn-contacted:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: rgba(200, 168, 75, 0.1);
+    }
+
+    .btn-contacted:disabled {
+      color: #4ade80;
+      border-color: rgba(74, 222, 128, 0.4);
+      background: rgba(74, 222, 128, 0.1);
+    }
+
+    .btn-delete {
+      color: var(--text-dim);
+      border-color: var(--border);
+    }
+
+    .btn-delete:hover {
+      border-color: #ff6b6b;
+      color: #ff6b6b;
+      background: rgba(255, 107, 107, 0.1);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px 20px;
+      color: var(--text-dim);
+      font-style: italic;
+      font-size: 12px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 4px; }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">▦ Runs Agendados</div>
+    <div class="header-controls">
+      <button class="toggle-btn active" id="btnSound" title="Sonido">
+        <i class="fa-solid fa-volume-high"></i> Sonido
+      </button>
+      <button class="toggle-btn active" id="btnNotifications" title="Notificaciones">
+        <i class="fa-solid fa-bell"></i> Notificaciones
+      </button>
+      <button class="toggle-btn btn-danger" id="btnClear" title="Limpiar">
+        <i class="fa-solid fa-trash"></i> Limpiar
+      </button>
+    </div>
+  </div>
+
+  <div class="content" id="content">
+    <div class="empty-state">Cargando...</div>
+  </div>
+
+  <script type="module" src="scheduled-runs.js"></script>
+</body>
+</html>

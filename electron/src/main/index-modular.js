@@ -6,6 +6,7 @@ const WindowsManager = require('./modules/windows/manager.js')
 const scraperModule = require('./modules/scraper/scraper.js')
 const watcherModule = require('./modules/watcher/watcher.js')
 const updaterModule = require('./modules/updater/updater.js')
+const alarmScheduler = require('./modules/alarm/scheduler.js')
 const { registerHandlers } = require('./modules/ipc/handlers.js')
 const { createTray } = require('./modules/tray/tray.js')
 
@@ -43,8 +44,9 @@ app.whenReady().then(() => {
     main: mainWin,
     openNextRuns: () => WindowsManager.createNextRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
     openPrices: () => WindowsManager.createPrices(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
+    openScheduledRuns: () => WindowsManager.createScheduledRuns(IS_DEV, process.env['ELECTRON_RENDERER_URL']),
   }
-  watcherModule.setNextRunsWindow(() => winConfig.main)
+  // Note: nextRuns window reference is updated in handlers.js when window opens
 
   // Register all IPC handlers first (tray after)
   registerHandlers({
@@ -73,6 +75,11 @@ app.whenReady().then(() => {
 
   // Auto-start scraper (with login if needed) - in background, no window visible
   scraperModule.autoStart(ROOT, DATA_DIR)
+
+  // Initialize alarm scheduler
+  alarmScheduler.cleanup()
+  alarmScheduler.start()
+  console.log('[Scheduler] Alarm scheduler initialized')
 
   // Auto-check for updates (silent, 3s after start)
   setTimeout(() => updaterModule.checkAndShowUpdate(true), 3000)

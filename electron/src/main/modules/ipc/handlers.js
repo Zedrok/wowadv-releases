@@ -4,6 +4,9 @@ const path = require('path')
 
 function registerHandlers(config) {
   const { scraperModule, watcherModule, updaterModule, windows } = config
+  const buyersStorage = require('../storage/buyersStorage')
+  const preferencesStorage = require('../storage/preferencesStorage')
+  const alarmScheduler = require('../alarm/scheduler')
 
   scraperModule.setWindowsRef(windows)
 
@@ -29,7 +32,13 @@ function registerHandlers(config) {
   ipcMain.handle('get-prices', () => watcherModule.getPrices(config.pricesPath))
 
   // Window management
-  ipcMain.on('open-next-runs', () => windows.openNextRuns())
+  ipcMain.on('open-next-runs', () => {
+    const nextRunsWin = windows.openNextRuns()
+    if (nextRunsWin) {
+      watcherModule.setNextRunsWindow(nextRunsWin)
+      console.log('[IPC] Updated watcher reference to nextRuns window')
+    }
+  })
   ipcMain.on('open-prices', () => {
     windows.openPrices()
     scraperModule.setWindowsRef(windows)
@@ -55,6 +64,99 @@ function registerHandlers(config) {
   // Updates
   ipcMain.handle('get-app-version', () => require('electron').app.getVersion())
   ipcMain.handle('check-for-updates', () => updaterModule.checkAndShowUpdate(false))
+
+  // Buyer & Alarm System
+  ipcMain.handle('save-buyer-record', (_, data) => {
+    const { nickRealm, battleTag, monto } = data
+    if (!nickRealm || !monto) return null
+    const buyer = buyersStorage.addBuyer(nickRealm, battleTag, monto)
+    buyersStorage.updateLastUsed(buyer.id)
+    return buyer
+  })
+
+  ipcMain.handle('get-saved-buyers', () => {
+    return buyersStorage.getBuyers()
+  })
+
+  ipcMain.handle('get-buyer-by-id', (_, buyerId) => {
+    return buyersStorage.getBuyerById(buyerId)
+  })
+
+  ipcMain.on('delete-buyer', (_, buyerId) => {
+    buyersStorage.deleteBuyer(buyerId)
+  })
+
+  ipcMain.handle('schedule-alarm', (_, data) => {
+    const { raidTime, alertTime, sound, minutesBefore, buyerId, raidInfo, buyerInfo } = data
+    const alarm = alarmScheduler.addAlarm(raidTime, alertTime, sound, minutesBefore, buyerId, raidInfo, buyerInfo)
+    // Notify scheduled runs window if open
+    if (windows.scheduledRuns && !windows.scheduledRuns.isDestroyed()) {
+      windows.scheduledRuns.webContents.send('alarm-scheduled', alarm)
+    }
+    return alarm
+  })
+
+  ipcMain.on('delete-alarm', (_, alarmId) => {
+    alarmScheduler.deleteAlarm(alarmId)
+    // Notify scheduled runs window if open
+    if (windows.scheduledRuns && !windows.scheduledRuns.isDestroyed()) {
+      windows.scheduledRuns.webContents.send('alarm-deleted', alarmId)
+    }
+  })
+
+  ipcMain.on('mark-alarm-contacted', (_, alarmId) => {
+    preferencesStorage.updateAlarmContacted(alarmId, true)
+    // Notify scheduled runs window if open
+    if (windows.scheduledRuns && !windows.scheduledRuns.isDestroyed()) {
+      windows.scheduledRuns.webContents.send('alarm-contacted', alarmId)
+    }
+  })
+
+  ipcMain.on('open-run-url', (_, url) => {
+    if (url && url.startsWith('http')) {
+      shell.openExternal(url)
+    }
+  })
+
+  ipcMain.handle('get-alarm-preferences', () => {
+    return preferencesStorage.getPreferences()
+  })
+
+  ipcMain.handle('get-scheduled-alarms', () => {
+    const prefs = preferencesStorage.getPreferences()
+    return prefs.alarms || []
+  })
+
+  ipcMain.on('save-alarm-preferences', (_, prefs) => {
+    preferencesStorage.updatePreferenceSettings(prefs)
+    alarmScheduler.updatePreferences()
+    // Notify scheduled runs window if open
+    if (windows.scheduledRuns && !windows.scheduledRuns.isDestroyed()) {
+      windows.scheduledRuns.webContents.send('preferences-updated', prefs)
+    }
+  })
+
+  ipcMain.handle('play-preview-sound', (_, filePath) => {
+    // Resolve relative paths from electron directory
+    let resolvedPath = filePath
+    if (filePath.startsWith('../')) {
+      // Path like '../assets/sounds/notification-0.ogg'
+      // __dirname is electron/src/main/modules/ipc
+      // Go up 4 levels to electron/, then add assets/sounds/...
+      const cleanPath = filePath.replace(/^\.\.\//, '')
+      resolvedPath = path.join(__dirname, '../../../../', cleanPath)
+    }
+    console.log(`[IPC] Playing preview sound: ${filePath} → ${resolvedPath}`)
+    alarmScheduler.playSound(resolvedPath)
+    return true
+  })
+
+  ipcMain.on('open-scheduled-runs', () => {
+    windows.openScheduledRuns()
+    if (windows.scheduledRuns && !windows.scheduledRuns.isDestroyed()) {
+      alarmScheduler.setScheduledRunsWindow(windows.scheduledRuns)
+    }
+  })
 }
 
 module.exports = {

@@ -32,6 +32,9 @@ function renderCards(container, rows) {
   }
 
   try {
+    const now = new Date()
+    const PAST_EXPIRY_MS = 15 * 60 * 1000  // 15 minutos
+
     container.innerHTML = rows.map((r, idx) => {
       if (!r || !r.raids || !r.difficulty) {
         console.warn('Skipping invalid row', idx, ':', r)
@@ -41,11 +44,30 @@ function renderCards(container, rows) {
     const bookingParts = (r.bookings || '').split('/')
     const [used, total] = [Number(bookingParts[0]) || 0, Number(bookingParts[1]) || 0]
     const isFull = total > 0 && used >= total
-    const status = r.raids.includes('UNSAVED') ? 'unsaved' : r.difficulty === 'Mythic' ? 'mythic' : 'saved'
     const fillPercent = total > 0 ? (used / total) * 100 : 0
+    const status = r.raids.includes('UNSAVED') ? 'unsaved' : r.difficulty === 'Mythic' ? 'mythic' : 'saved'
+    const slotClass = isFull ? 'raid-slots--full' : fillPercent >= 70 ? 'raid-slots--warning' : ''
+
+    // Calculate if raid is past expired (15+ minutes)
+    let isPastExpired = false
+    try {
+      const [month, day] = (r.date || '').match(/\d+\/\d+/)?.[0].split('/').map(Number) || [0, 0]
+      const timeMatch = (r.time || '').match(/(\d+):(\d+)\s(AM|PM)/)
+      if (month && day && timeMatch) {
+        const [_, hours, minutes, period] = timeMatch
+        let h = Number(hours)
+        if (period === 'PM' && h !== 12) h += 12
+        if (period === 'AM' && h === 12) h = 0
+        const year = now.getFullYear()
+        const raidDate = new Date(year, month - 1, day, h, Number(minutes), 0)
+        if (raidDate < now) {
+          isPastExpired = (now.getTime() - raidDate.getTime()) > PAST_EXPIRY_MS
+        }
+      }
+    } catch (_) { /* ignore */ }
 
     return `
-      <div class="raid-card" data-key="${key}" data-url="${r.url || ''}">
+      <div class="raid-card${isPastExpired ? ' past-expired' : ''}" data-key="${key}" data-url="${r.url || ''}">
         <div class="raid-header">
           <div class="raid-info">
             <div class="raid-name">${r.raids}</div>
@@ -65,7 +87,7 @@ function renderCards(container, rows) {
           <div class="raid-status ${status}${isFull ? ' full' : ''}">
             ${status === 'unsaved' ? 'Unsaved' : status === 'mythic' ? 'Mythic' : 'Saved'}
           </div>
-          <div class="raid-slots">
+          <div class="raid-slots ${slotClass}">
             <div class="raid-slots-text">${r.bookings}</div>
             <div class="raid-slots-bar">
               <div class="raid-slots-bar-fill" style="width: ${fillPercent}%"></div>
@@ -123,8 +145,14 @@ function renderCards(container, rows) {
   container.querySelectorAll('.raid-link-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation()
+      const card = btn.closest('.raid-card')
+      const key = card.dataset.key
       const url = btn.dataset.url
-      if (url) openUrl(url)
+      const raid = allRows.find(r => rowKey(r) === key)
+      if (raid && url) {
+        showRaidModal(raid, url)
+        openUrl(url)
+      }
     })
   })
   } catch (e) {
@@ -138,6 +166,106 @@ function renderPage() {
   const sorted = table.applySort(filtered, sortCol)
   filters.populateDropdowns(allRows)
   renderCards(raidsList, sorted)
+}
+
+// ── Modal System ───────────────────────────────────────────────
+function showRaidModal(raid, url) {
+  const backdrop = document.getElementById('raidModalBackdrop')
+  const form = document.getElementById('raidModalForm')
+
+  if (!backdrop) return // Modal not initialized yet
+
+  // Show modal
+  backdrop.hidden = false
+
+  // Setup form submission
+  form.onsubmit = async (e) => {
+    e.preventDefault()
+
+    const nickRealm = document.getElementById('fNickRealm').value
+    const battleTag = document.getElementById('fBattleTag').value
+    const monto = document.getElementById('fMonto').value
+    const enableAlarm = document.getElementById('fEnableAlarm').checked
+
+    if (!nickRealm || !monto) {
+      alert('Nick-Realm y Monto son requeridos')
+      return
+    }
+
+    try {
+      // Save buyer record
+      const buyer = await window.api.saveBuyerRecord({
+        nickRealm,
+        battleTag: battleTag,
+        monto: Number(monto)
+      })
+
+      // Schedule alarm if enabled
+      if (enableAlarm) {
+        const sound = document.getElementById('fAlarmSound').value
+        const minutesBefore = Number(document.getElementById('fMinutesBefore').value) || 15
+
+        // Parse raid date and time correctly
+        // raid.date format: "Sunday 04/19", raid.time format: "4:00 PM"
+        const [month, day] = raid.date.match(/\d+\/\d+/)[0].split('/').map(Number)
+        const timeMatch = raid.time.match(/(\d+):(\d+)\s(AM|PM)/)
+        let hours = parseInt(timeMatch[1])
+        const minutes = parseInt(timeMatch[2])
+        const period = timeMatch[3]
+
+        // Convert to 24-hour format
+        if (period === 'PM' && hours !== 12) hours += 12
+        if (period === 'AM' && hours === 12) hours = 0
+
+        // Create date (assuming current year)
+        const now = new Date()
+        const year = now.getFullYear()
+        const raidDate = new Date(year, month - 1, day, hours, minutes, 0)
+
+        // If date is in the past, assume it's next year
+        if (raidDate < now) {
+          raidDate.setFullYear(year + 1)
+        }
+
+        const raidTime = raidDate.toISOString()
+        const alertTime = new Date(new Date(raidTime).getTime() - minutesBefore * 60000).toISOString()
+
+        await window.api.scheduleAlarm({
+          raidTime,
+          alertTime,
+          sound,
+          minutesBefore,
+          buyerId: buyer.id,
+          buyerInfo: {
+            nickRealm: buyer.nickRealm,
+            battleTag: buyer.battleTag
+          },
+          raidInfo: {
+            name: raid.raids,
+            team: raid.team,
+            difficulty: raid.difficulty,
+            loot: raid.loot,
+            url: raid.url
+          }
+        })
+      }
+
+      closeRaidModal()
+    } catch (e) {
+      console.error('Error saving buyer/alarm:', e)
+      alert('Error al guardar los datos')
+    }
+  }
+}
+
+function closeRaidModal() {
+  const backdrop = document.getElementById('raidModalBackdrop')
+  if (backdrop) backdrop.hidden = true
+
+  // Reset form
+  const form = document.getElementById('raidModalForm')
+  if (form) form.reset()
+  document.getElementById('fAlarmOptions').hidden = true
 }
 
 // ── Event handlers ─────────────────────────────────────────────
@@ -232,18 +360,6 @@ document.getElementById('fLoot').addEventListener('change', () => {
 document.getElementById('fLock').addEventListener('change', (e) => {
   const isUnlocked = e.target.checked
   filters.filters.lock = isUnlocked ? 'Unlocked' : ''
-
-  // Update icon and text
-  const icon = document.getElementById('lockIcon')
-  const text = document.getElementById('lockText')
-  if (isUnlocked) {
-    icon.className = 'fa-solid fa-lock-open'
-    text.textContent = 'Unlocked'
-  } else {
-    icon.className = 'fa-solid fa-lock'
-    text.textContent = 'Locked'
-  }
-
   console.log('[Filter] Lock changed to:', filters.filters.lock)
   filters.saveCurrentFilters()
   renderPage()
@@ -274,11 +390,6 @@ document.getElementById('fDescuento').addEventListener('change', () => {
   renderPage()
 })
 
-document.getElementById('btnResetFilters').addEventListener('click', () => {
-  filters.resetFilters()
-  renderPage()
-})
-
 document.getElementById('btnToggleAdvanced').addEventListener('click', () => {
   const advanced = document.getElementById('filterAdvanced')
   const btn = document.getElementById('btnToggleAdvanced')
@@ -301,6 +412,46 @@ document.getElementById('btnLogClear').addEventListener('click', () => {
   logContent.textContent = ''
 })
 
+// ── Raid Modal ─────────────────────────────────────────────
+const enableAlarmCheckbox = document.getElementById('fEnableAlarm')
+if (enableAlarmCheckbox) {
+  enableAlarmCheckbox.addEventListener('change', (e) => {
+    const alarmOptions = document.getElementById('fAlarmOptions')
+    if (alarmOptions) alarmOptions.hidden = !e.target.checked
+  })
+}
+
+const previewBtn = document.querySelector('.raid-modal-box .btn-preview')
+if (previewBtn) {
+  previewBtn.addEventListener('click', async (e) => {
+    e.preventDefault()
+    const soundSelect = document.getElementById('fAlarmSound')
+    if (soundSelect) {
+      const sound = soundSelect.value
+      try {
+        await window.api.playPreviewSound(sound)
+      } catch (err) {
+        console.error('Error playing preview sound:', err)
+      }
+    }
+  })
+}
+
+const cancelBtn = document.querySelector('.raid-modal-box .btn-cancel')
+if (cancelBtn) {
+  cancelBtn.addEventListener('click', (e) => {
+    e.preventDefault()
+    closeRaidModal()
+  })
+}
+
+const backdrop = document.getElementById('raidModalBackdrop')
+if (backdrop) {
+  backdrop.addEventListener('click', (e) => {
+    if (e.target === backdrop) closeRaidModal()
+  })
+}
+
 // ── Sort by column ─────────────────────────────────────────────
 document.querySelectorAll('th[data-col]').forEach(th => {
   th.addEventListener('click', () => {
@@ -313,9 +464,14 @@ document.querySelectorAll('th[data-col]').forEach(th => {
 
 // ── Init ───────────────────────────────────────────────────────
 console.log('Renderer init: requesting initial data...')
+
+// Show loading state initially
+scraper.setScraperState(false, true)
+
+// Fetch actual status after short delay
 window.api.isRunning().then(running => {
   console.log('Scraper running:', running)
-  scraper.setScraperState(running)
+  scraper.setScraperState(running, false)
 })
 
 filters.loadSavedFilters()

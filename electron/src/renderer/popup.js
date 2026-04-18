@@ -2,7 +2,6 @@
 
 let pricesServices = []
 let hiddenCombos   = new Set()
-let searchText     = ''
 function fmtGold(n) {
   if (n >= 1_000) return (n / 1_000).toLocaleString('en', { maximumFractionDigits: 1 }) + 'k'
   return String(n)
@@ -145,8 +144,10 @@ function buildCard(r, diffCls, isFull) {
     ? `${dateParts[0].slice(0, 3)} ${dateParts[1]}`
     : r.date
 
+  const raidDataAttr = r.url ? ` data-raid='${JSON.stringify({date: r.date, time: r.time, raids: r.raids, team: r.team, difficulty: r.difficulty}).replace(/'/g, "&apos;")}'` : ''
+
   return `
-    <div class="card ${diffCls}${isFull ? ' card-full' : ''}"${r.url ? ` data-url="${esc(r.url)}" style="cursor:pointer"` : ''}${r.isFuture ? ' data-future="true"' : ''}>
+    <div class="card ${diffCls}${isFull ? ' card-full' : ''}${r.isPastExpired ? ' past-expired' : ''}"${r.url ? ` data-url="${esc(r.url)}" style="cursor:pointer"` : ''}${r.isFuture ? ' data-future="true"' : ''}${r.isFutureStrict ? ' data-future-strict="true"' : ''}${raidDataAttr}>
       <div class="card-top">
         <span class="card-datetime">${esc(dateShort)} · ${esc(r.time)}</span>
         <span class="card-books ${booksClass}">${esc(r.bookings)}</span>
@@ -171,36 +172,48 @@ function buildSection(title, raidType, takeBySavedState, showFull, isFull) {
   const savedData = takeBySavedState(raidType, true)
 
   // Ocultar sección completa si no hay nada que mostrar
-  const totalAvail = unsavedData.available.length + savedData.available.length
-  const totalFull = unsavedData.full.length + savedData.full.length
-  if (totalAvail === 0 && totalFull === 0) return ''
+  const totalRaids = unsavedData.allRaids.length + savedData.allRaids.length
+  if (totalRaids === 0) return ''
+
+  // Count available vs full
+  const totalAvail = [...unsavedData.allRaids, ...savedData.allRaids].filter(r => !isFull(r.bookings)).length
+  const totalFull = [...unsavedData.allRaids, ...savedData.allRaids].filter(r => isFull(r.bookings)).length
 
   let cardsHtml = ''
 
   const savedColor = raidType === 'Mythic' ? 'mythic' : 'heroic'
 
-  // Mostrar Unsaved (color normal = azul)
-  if (unsavedData.available.length > 0 || unsavedData.full.length > 0) {
-    const allUnsaved = [...unsavedData.available, ...unsavedData.full]
-    cardsHtml += `<span class="badge badge-normal">Unsaved</span><div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allUnsaved.map(r => buildCard(r, 'normal', isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
+  // Helper para generar precio tooltip
+  const buildPriceTip = (matched) => {
+    if (!matched.length) return ''
+    const priceRows = matched.map(s => {
+      const name = s.name.replace(/^🔸\s*/, '')
+      return `<div class="ptip-row"><span class="ptip-name">${esc(name)}</span><span class="ptip-price">${fmtGold(s.price)}</span></div>`
+    }).join('')
+    return `<div class="price-tip" hidden>${priceRows}</div>`
   }
 
-  // Mostrar Saved (color específico por raidType) - disponibles y full juntos con badge
-  const allSaved = [...savedData.available, ...savedData.full]
+  // Mostrar Unsaved (color normal = azul) - con precios separados
+  if (unsavedData.allRaids.length > 0) {
+    const allUnsaved = unsavedData.allRaids
+    const unsavedSample = allUnsaved[0]
+    const unsavedMatched = unsavedSample ? matchPrices(unsavedSample) : []
+    const unsavedPriceTip = buildPriceTip(unsavedMatched)
+    cardsHtml += `<span class="badge badge-normal">Unsaved</span><div class="carousel-wrap">${unsavedPriceTip}<button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allUnsaved.map(r => buildCard(r, 'normal', isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
+  }
+
+  // Mostrar Saved (color específico por raidType) - con precios separados
+  const allSaved = savedData.allRaids
   if (allSaved.length > 0) {
     const badgeLabel = raidType === 'Mythic' ? 'Mythic' : 'Saved'
-    cardsHtml += `<span class="badge badge-${savedColor}">${badgeLabel}</span><div class="carousel-wrap"><button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allSaved.map(r => buildCard(r, savedColor, isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
+    const savedSample = allSaved[0]
+    const savedMatched = savedSample ? matchPrices(savedSample) : []
+    const savedPriceTip = buildPriceTip(savedMatched)
+    cardsHtml += `<span class="badge badge-${savedColor}">${badgeLabel}</span><div class="carousel-wrap">${savedPriceTip}<button class="carousel-arrow arr-left">&#8249;</button><div class="cards-row">${allSaved.map(r => buildCard(r, savedColor, isFull(r.bookings))).join('')}</div><button class="carousel-arrow arr-right">&#8250;</button></div>`
   }
 
-  // Precios asociados (usar primer raid de cualquier estado)
-  const allRaids = [...unsavedData.available, ...unsavedData.full, ...savedData.available, ...savedData.full]
-  const sampleRow = allRaids[0]
-  const matched = sampleRow ? matchPrices(sampleRow) : []
-  const priceRows = matched.map(s => {
-    const name = s.name.replace(/^🔸\s*/, '')
-    return `<div class="ptip-row"><span class="ptip-name">${esc(name)}</span><span class="ptip-price">${fmtGold(s.price)}</span></div>`
-  }).join('')
-  const priceTip = matched.length ? `<div class="price-tip" hidden>${priceRows}</div>` : ''
+  // No hay priceTip global — cada carousel tiene su propio tooltip
+  const priceTip = ''
 
   return `
     <div class="section">
@@ -266,47 +279,49 @@ async function render() {
   document.getElementById('lastUpdate').textContent =
     payload?.timestamp ? `Actualizado: ${payload.timestamp}` : '—'
 
-  // Filtrar: búsqueda + filtros
+  // Filtrar: filtros
   const GRACE_MS = 5 * 60 * 1000
   const todayStr = `${now.getMonth() + 1}`.padStart(2, '0') + '/' + `${now.getDate()}`.padStart(2, '0')
-  const searchQ = searchText.trim().toLowerCase()
   const mostrarAnteriores = document.getElementById('chkPast').checked
+  const soloUnlocked = document.getElementById('chkUnlocked').checked
   const soloDisponibles = document.getElementById('chkFull') ? !document.getElementById('chkFull').checked : true
 
   const allFiltered = allRows.filter(r => {
-    // Si NO está marcado "Mostrar Anteriores", solo muestra runs de hoy y futuros
-    if (!mostrarAnteriores) {
-      const datePart = (r.date || '').split(' ')[1] || ''
-      if (datePart !== todayStr) return false
-    }
+    // SIEMPRE filtrar por fecha: solo runs de hoy
+    const datePart = (r.date || '').split(' ')[1] || ''
+    if (datePart !== todayStr) return false
 
-    // Si "Mostrar Anteriores" está activo, ignora los filtros de lock y disponibilidad (muestra todo)
-    if (!mostrarAnteriores) {
+    // Aplicar filtro de Unlocked si está marcado (y no se muestran anteriores)
+    if (soloUnlocked && !mostrarAnteriores) {
       const isUnlocked = r.lock.toLowerCase().includes('unlocked')
       if (!isUnlocked) return false
+    }
 
-      // Si "Mostrar Anteriores" NO está activo, filtra por disponibilidad
+    // Si "Mostrar Anteriores" NO está activo, aplica filtro de disponibilidad
+    if (!mostrarAnteriores) {
+      // Filtra por disponibilidad si el checkbox de "Full" está activado
       if (soloDisponibles) {
         const [used, total] = (r.bookings || '').split('/').map(Number)
         if (isNaN(used) || isNaN(total) || used >= total) return false
       }
     }
+    // Si "Mostrar Anteriores" está activo: muestra todo (sin filtros de lock/full)
 
-    // Búsqueda por texto en: equipo, raids, horario, dificultad, loot, notas
-    if (searchQ) {
-      const searchableText = `${r.team} ${r.time} ${r.raids} ${r.difficulty} ${r.loot} ${r.notes}`.toLowerCase()
-      if (!searchableText.includes(searchQ)) return false
-    }
     return true
   })
 
   // Marcar cuáles son futuros y ordenar (futuros primero)
+  const PAST_EXPIRY_MS = 15 * 60 * 1000  // 15 minutos
   const future = allFiltered.map(r => {
     const d = parseRaidToDate(r.date, r.time)
     const isFuture = d && (d.getTime() + GRACE_MS) > now
-    return { ...r, isFuture, parsedDate: d }
+    // isFutureStrict: sin ventana de gracia, para posicionar carrusel cuando mostrarAnteriores está activo
+    const isFutureStrict = d && d.getTime() > now
+    // isPastExpired: raid pasó hace más de 15 minutos
+    const isPastExpired = d && (now.getTime() - d.getTime()) > PAST_EXPIRY_MS
+    return { ...r, isFuture, isFutureStrict, isPastExpired, parsedDate: d }
   })
-    .filter(r => r.isFuture || showPast)
+    .filter(r => r.isFuture || mostrarAnteriores)
     .sort((a, b) => {
       // Primero futuros, luego pasados
       if (a.isFuture !== b.isFuture) return a.isFuture ? -1 : 1
@@ -369,9 +384,9 @@ async function render() {
       const s = r.raids.includes('UNSAVED') ? 'Unsaved' : 'Saved'
       return isSaved ? s === 'Saved' : s === 'Unsaved'
     })
-    const available = filtered.filter(r => !isFull(r.bookings))
-    const full      = showFull ? filtered.filter(r => isFull(r.bookings)) : []
-    return { available, full }
+    // Return single array (already ordered by hour from takeByType)
+    // Full raids will appear in correct time order, not at the end
+    return { allRaids: filtered }
   }
 
   updateFilterPanel(combos)
@@ -396,7 +411,14 @@ async function render() {
     return buildSection(title, raidType, takeBySavedState, showFull, isFull)
   }).join('')
 
-  document.getElementById('content').innerHTML = html
+  // Preservar scroll position antes de actualizar
+  const content = document.getElementById('content')
+  const scrollTop = content.scrollTop
+
+  content.innerHTML = html
+
+  // Restaurar scroll position
+  content.scrollTop = scrollTop
 
   // Inicializar fades y listener scroll en cada carrusel
   document.querySelectorAll('.cards-row').forEach(row => {
@@ -421,24 +443,29 @@ async function render() {
 
     row.addEventListener('mouseup', () => {
       // Marcar el carrusel como "dragged" por un corto tiempo
+      // Timeout debe ser lo suficientemente largo para bloquear el click que se dispara después de mouseup
       if (isDragging) {
         row.classList.add('dragging')
-        setTimeout(() => row.classList.remove('dragging'), 50)
+        setTimeout(() => row.classList.remove('dragging'), 150)
       }
     }, { passive: true })
 
     // Scrollear al primer card futuro en cada carrusel
-    const firstFuture = row.querySelector('[data-future="true"]')
+    // Si mostrarAnteriores está activo, usar isFutureStrict (sin GRACE_MS) para encontrar el próximo real
+    const selector = mostrarAnteriores ? '[data-future-strict="true"]' : '[data-future="true"]'
+    const firstFuture = row.querySelector(selector)
     if (firstFuture) {
       const cardWidth = firstFuture.offsetWidth
-      const containerScrollLeft = row.scrollLeft
+      const gap = 5
       const cardOffsetLeft = firstFuture.offsetLeft
       const rowWidth = row.offsetWidth
 
-      // Si el card futuro no está visible, scrollear hacia él
-      if (cardOffsetLeft < containerScrollLeft || cardOffsetLeft + cardWidth > containerScrollLeft + rowWidth) {
-        row.scrollLeft = Math.max(0, cardOffsetLeft - 5)
-      }
+      // Posicionar el siguiente run visible, con margen para mostrar que hay space atrás
+      // Si hay card anterior, mostrarlo un poco; si no, posicionar con margen mínimo
+      const prevCard = firstFuture.previousElementSibling
+      const margin = prevCard ? Math.max(cardWidth + gap, 80) : 0
+      const targetScroll = Math.max(0, cardOffsetLeft - margin)
+      row.scrollLeft = targetScroll
     }
   })
 }
@@ -447,20 +474,29 @@ async function render() {
 document.getElementById('chkFull').addEventListener('change', render)
 document.getElementById('chkPast').addEventListener('change', render)
 
-document.getElementById('searchInput').addEventListener('input', e => {
-  searchText = e.target.value
-  render()
-})
-
-document.getElementById('content').addEventListener('click', e => {
+document.getElementById('content').addEventListener('dblclick', e => {
   // No propagar clicks del botón de precios
   if (e.target.closest('.btn-price-info')) { e.stopPropagation(); return }
   const card = e.target.closest('[data-url]')
-  // No abrir link si el carrusel fue arrastrado
+  // Doble click abre URL (sin modal)
   if (card) {
-    const row = card.closest('.cards-row')
-    if (row && !row.classList.contains('dragging')) {
-      window.api.openUrl(card.dataset.url)
+    const url = card.dataset.url
+    if (url) {
+      window.api.openUrl(url)
+    }
+  }
+})
+
+document.getElementById('content').addEventListener('contextmenu', e => {
+  // No propagar clicks del botón de precios
+  if (e.target.closest('.btn-price-info')) { e.stopPropagation(); return }
+  const card = e.target.closest('[data-url]')
+  // Click derecho abre modal (sin URL)
+  if (card) {
+    e.preventDefault()  // Bloquear menú de contexto del navegador
+    const raidData = card.dataset.raid ? JSON.parse(card.dataset.raid) : null
+    if (raidData) {
+      showRaidModal(raidData)
     }
   }
 })
@@ -476,8 +512,34 @@ document.getElementById('btnFilter').addEventListener('click', () => {
   document.getElementById('btnFilter').classList.toggle('active', !panel.hidden)
 })
 
+document.getElementById('btnScheduledRuns').addEventListener('click', () => {
+  window.api.openScheduledRuns()
+})
+
+// Guardar timestamp de la última actualización
+let lastUpdateTime = null
+
+// Actualizar luz del scraper basado en timestamp (verde si actualizado hace <2min, rojo si no)
+function updateScraperIndicator() {
+  const indicator = document.getElementById('scraperIndicator')
+  if (!indicator || !lastUpdateTime) return
+
+  const now = new Date()
+  const minutesAgo = (now.getTime() - lastUpdateTime.getTime()) / 60000
+  const isActive = minutesAgo < 2
+
+  indicator.classList.toggle('active', isActive)
+}
+
 // Auto-actualizar cuando llegan datos nuevos
-window.api.onRaidsData(() => render())
+window.api.onRaidsData(() => {
+  lastUpdateTime = new Date()
+  render()
+  updateScraperIndicator()
+})
+
+// Chequear estado cada segundo
+setInterval(updateScraperIndicator, 1000)
 
 // ── Flechas de carrusel ────────────────────────────────────
 document.getElementById('content').addEventListener('click', e => {
@@ -502,19 +564,22 @@ function updateCarouselFades(row) {
 document.getElementById('content').addEventListener('mousedown', e => {
   const row = e.target.closest('.cards-row')
   if (!row) return
-  row.classList.add('dragging')
+
+  // Si es doble-click (e.detail === 2), ignorar drag y dejar que el dblclick ocurra
+  if (e.detail === 2) return
+
   const startX = e.pageX - row.offsetLeft
   const scrollLeft = row.scrollLeft
+  let moved = false
 
   const onMove = ev => {
-    if (!row.classList.contains('dragging')) return
+    moved = true
     ev.preventDefault()
     const x = ev.pageX - row.offsetLeft
     row.scrollLeft = scrollLeft - (x - startX)
     updateCarouselFades(row)
   }
   const onUp = () => {
-    row.classList.remove('dragging')
     window.removeEventListener('mousemove', onMove)
     window.removeEventListener('mouseup', onUp)
   }
@@ -559,7 +624,7 @@ function positionTip(tip, e) {
 content.addEventListener('mouseover', e => {
   const card = e.target.closest('.card')
   if (!card) return
-  const tip = card.closest('.section')?.querySelector('.price-tip')
+  const tip = card.closest('.carousel-wrap')?.querySelector('.price-tip')
   if (!tip) return
   activeTip = tip
   positionTip(tip, e)
@@ -575,10 +640,142 @@ content.addEventListener('mouseout', e => {
   if (!card) return
   // Solo ocultar si el mouse sale de la card completamente
   if (card.contains(e.relatedTarget)) return
-  const tip = card.closest('.section')?.querySelector('.price-tip')
+  const tip = card.closest('.carousel-wrap')?.querySelector('.price-tip')
   if (tip) {
     tip.hidden = true
     activeTip = null
+  }
+})
+
+// ── Modal System ───────────────────────────────────────────────
+function showRaidModal(raid, url = null) {
+  const backdrop = document.getElementById('raidModalBackdrop')
+  const form = document.getElementById('raidModalForm')
+
+  if (!backdrop) return // Modal not initialized yet
+
+  // Show modal
+  backdrop.hidden = false
+
+  // Check "Establecer alarma" by default
+  const enableAlarm = document.getElementById('fEnableAlarm')
+  if (enableAlarm) {
+    enableAlarm.checked = true
+    document.getElementById('fAlarmOptions').hidden = false
+  }
+
+  // Setup form submission
+  form.onsubmit = async (e) => {
+    e.preventDefault()
+
+    const nickRealm = document.getElementById('fNickRealm').value
+    const battleTag = document.getElementById('fBattleTag').value
+    const monto = document.getElementById('fMonto').value
+    const enableAlarm = document.getElementById('fEnableAlarm').checked
+
+    if (!nickRealm || !monto) {
+      alert('Nick-Realm y Monto son requeridos')
+      return
+    }
+
+    try {
+      // Save buyer record
+      const buyer = await window.api.saveBuyerRecord({
+        nickRealm,
+        battleTag: battleTag,
+        monto: Number(monto)
+      })
+
+      // Schedule alarm if enabled
+      if (enableAlarm) {
+        const sound = document.getElementById('fAlarmSound').value
+        const minutesBefore = Number(document.getElementById('fMinutesBefore').value) || 15
+
+        // Parse raid date and time correctly
+        // raid.date format: "Sunday 04/19", raid.time format: "4:00 PM"
+        const [month, day] = raid.date.match(/\d+\/\d+/)[0].split('/').map(Number)
+        const timeMatch = raid.time.match(/(\d+):(\d+)\s(AM|PM)/)
+        let hours = parseInt(timeMatch[1])
+        const minutes = parseInt(timeMatch[2])
+        const period = timeMatch[3]
+
+        // Convert to 24-hour format
+        if (period === 'PM' && hours !== 12) hours += 12
+        if (period === 'AM' && hours === 12) hours = 0
+
+        // Create date (assuming current year)
+        const now = new Date()
+        const year = now.getFullYear()
+        const raidDate = new Date(year, month - 1, day, hours, minutes, 0)
+
+        // If date is in the past, assume it's next year
+        if (raidDate < now) {
+          raidDate.setFullYear(year + 1)
+        }
+
+        const raidTime = raidDate.toISOString()
+        const alertTime = new Date(new Date(raidTime).getTime() - minutesBefore * 60000).toISOString()
+
+        await window.api.scheduleAlarm({
+          raidTime,
+          alertTime,
+          sound,
+          minutesBefore,
+          buyerId: buyer.id,
+          buyerInfo: {
+            nickRealm: buyer.nickRealm,
+            battleTag: buyer.battleTag
+          },
+          raidInfo: {
+            name: raid.raids,
+            team: raid.team,
+            difficulty: raid.difficulty,
+            loot: raid.loot,
+            url: raid.url
+          }
+        })
+      }
+
+      closeRaidModal()
+    } catch (e) {
+      console.error('Error saving buyer/alarm:', e)
+      alert('Error al guardar los datos')
+    }
+  }
+}
+
+function closeRaidModal() {
+  const backdrop = document.getElementById('raidModalBackdrop')
+  if (backdrop) backdrop.hidden = true
+
+  // Reset form
+  const form = document.getElementById('raidModalForm')
+  if (form) form.reset()
+  document.getElementById('fAlarmOptions').hidden = true
+}
+
+// Modal event listeners
+document.getElementById('fEnableAlarm')?.addEventListener('change', (e) => {
+  document.getElementById('fAlarmOptions').hidden = !e.target.checked
+})
+
+document.querySelector('.raid-modal-box .btn-preview')?.addEventListener('click', async (e) => {
+  e.preventDefault()
+  const soundPath = document.getElementById('fAlarmSound').value
+  if (soundPath) {
+    try {
+      await window.api.playPreviewSound(soundPath)
+    } catch (err) {
+      console.error('Error playing sound:', err)
+    }
+  }
+})
+
+document.querySelector('.raid-modal-box .btn-cancel')?.addEventListener('click', closeRaidModal)
+
+document.getElementById('raidModalBackdrop')?.addEventListener('click', (e) => {
+  if (e.target.id === 'raidModalBackdrop') {
+    closeRaidModal()
   }
 })
 

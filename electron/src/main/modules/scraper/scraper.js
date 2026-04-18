@@ -193,6 +193,8 @@ function sendStatus(status) {
   if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('scraper-status', status)
   const pw = windowsRef?.prices
   if (pw && !pw.isDestroyed()) pw.webContents.send('scraper-status', status)
+  const nw = windowsRef?.nextRuns
+  if (nw && !nw.isDestroyed()) nw.webContents.send('scraper-status', status)
 }
 
 function sendShowLogs() {

@@ -36,7 +36,6 @@ const btnLog       = document.getElementById('btnLog')
 const logPanel     = document.getElementById('logPanel')
 const logContent   = document.getElementById('logContent')
 const btnLogClear  = document.getElementById('btnLogClear')
-const btnReset     = document.getElementById('btnResetFilters')
 
 const fFuturos    = document.getElementById('fFuturos')
 const fDifficulty = document.getElementById('fDifficulty')
