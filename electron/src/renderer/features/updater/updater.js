@@ -33,10 +33,7 @@ export async function initUpdater() {
   // Wire up modal buttons
   wireModalButtons()
 
-  // Check for updates on startup (every 6 hours)
-  checkForUpdatesAtStartup()
-
-  // Show changelog if user hasn't seen current version
+  // Show changelog if user hasn't seen current version (on startup only)
   showChangelogIfNew()
 }
 

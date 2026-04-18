@@ -6,45 +6,45 @@
 const changelog = [
   {
     version: '1.2.1',
-    date: 'April 18, 2026',
+    date: '18 de abril de 2026',
     changes: [
-      '🐛 Fixed changelog modal display in packaged app',
-      '🔄 Fixed auto-updater GitHub repository reference',
-      '📦 Ensured all required modules are copied to build output'
+      '🐛 Corregido modal de historial de cambios en app empaquetada',
+      '🔄 Corregido repositorio de GitHub para actualizaciones automáticas',
+      '📦 Asegurado que todos los módulos requeridos se copian al build'
     ]
   },
   {
     version: '1.2.0',
-    date: 'April 18, 2026',
+    date: '18 de abril de 2026',
     changes: [
-      '🎨 Hidden scrollbar in Próximos Runs popup (scrollable but invisible)',
-      '🔒 Disabled Start button until autostart completes (prevents double execution)',
-      '✨ Improved UX with better state management for scraper initialization'
+      '🎨 Scrollbar oculto en popup de Próximos Runs (desplazable pero invisible)',
+      '🔒 Botón Start deshabilitado hasta que autostart complete (previene ejecución doble)',
+      '✨ Mejor gestión de estado para inicialización del scraper'
     ]
   },
   {
     version: '1.1.0',
-    date: 'April 18, 2026',
+    date: '18 de abril de 2026',
     changes: [
-      '🔊 Fixed audio playback for alarm previews and notifications',
-      '🎵 Added 5 new alarm sounds: Bell Chime, Alarm Bells, Notification Ding, Marimba Bubble, Marimba Swoop',
-      '⏰ Implemented scheduled runs window with full alarm management',
-      '👁️ Moved "Actualizado:" timestamp to right of scraper status indicator',
-      '🔒 Hidden DevTools console for production builds',
-      '🌐 Fixed Discord OAuth headless mode for automated authentication',
-      '📋 Added changelog modal on startup for unseen versions'
+      '🔊 Corregida reproducción de audio para previsualizaciones y notificaciones',
+      '🎵 Agregados 5 nuevos sonidos: Bell Chime, Alarm Bells, Notification Ding, Marimba Bubble, Marimba Swoop',
+      '⏰ Implementada ventana de runs agendados con gestión completa de alarmas',
+      '👁️ Movido timestamp "Actualizado:" a la derecha del indicador de scraper',
+      '🔒 Consola de DevTools oculta en builds de producción',
+      '🌐 Corregido modo headless de Discord OAuth para autenticación automatizada',
+      '📋 Agregado modal de historial al iniciar para versiones no vistas'
     ]
   },
   {
     version: '1.0.0',
-    date: 'April 1, 2026',
+    date: '1 de abril de 2026',
     changes: [
-      'Initial release of Baker\'s Raid Monitor',
-      'Real-time raid booking monitoring with live updates',
-      'Price matching and display for raid runs',
-      'Scraper status indicator with color feedback',
-      'Next Runs popup window with carousel view',
-      'Price list window with category filters'
+      'Lanzamiento inicial de Baker\'s Raid Monitor',
+      'Monitoreo en tiempo real de raids con actualizaciones en vivo',
+      'Coincidencia y visualización de precios para runs',
+      'Indicador de estado del scraper con retroalimentación de color',
+      'Ventana popup de Próximos Runs con vista de carrusel',
+      'Ventana de lista de precios con filtros de categorías'
     ]
   }
 ]
