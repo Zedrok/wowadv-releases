@@ -200,57 +200,33 @@ def main():
 
         # Navegar a raids
         print(f"Navegando a {URL_RAIDS} ...")
-        try:
-            page.goto(URL_RAIDS, wait_until="networkidle", timeout=60000)
-        except Exception as e:
-            print(f"\n⚠️  Error navegando a raids: {e}")
-            print(f"Intentando continuar...")
-
+        page.goto(URL_RAIDS, wait_until="networkidle")
         # Esperar a que la tabla se renderice (puede tomar tiempo con los datos de la API)
         try:
             page.wait_for_selector("tbody tr", timeout=30000)
         except Exception as e:
             print(f"\n⚠️  Error esperando tabla: {e}")
             print(f"URL actual: {page.url}")
-            print(f"Token existe: {os.path.exists(TOKEN_FILE)}")
             print(f"Contenido de la página (primeros 500 chars):\n{page.content()[:500]}\n")
-            # Si no hay tabla, probablemente el token expiró - salir para reintentar
-            if not os.path.exists(TOKEN_FILE):
-                print("Token no encontrado. Necesita re-autenticación. Saliendo...")
-                raise KeyboardInterrupt()
             raise
 
         print("Listo. Escuchando actualizaciones en tiempo real. Ctrl+C para salir.\n")
 
         try:
-            import time
-            last_refresh = time.time()
             while True:
                 if os.path.exists(OPEN_URL_FLAG):
                     url = open(OPEN_URL_FLAG).read().strip()
                     os.remove(OPEN_URL_FLAG)
                     if url.startswith("http"):
                         print(f"  [URL] Abriendo en browser: {url}")
-                        try:
-                            new_page = context.new_page()
-                            new_page.goto(url, wait_until="domcontentloaded")
-                        except Exception as e:
-                            print(f"  [URL] Error: {e}")
+                        new_page = context.new_page()
+                        new_page.goto(url, wait_until="domcontentloaded")
 
                 if os.path.exists(REFRESH_PRICES_FLAG):
                     os.remove(REFRESH_PRICES_FLAG)
-                    try:
-                        refresh_prices_with_playwright(context, on_response)
-                    except Exception as e:
-                        print(f"  [Prices] Error: {e}")
+                    refresh_prices_with_playwright(context, on_response)
 
                 page.wait_for_timeout(500)
-
-                # Log every 60 seconds to show script is alive
-                now = time.time()
-                if now - last_refresh > 60:
-                    print(f"[{now}] Script ejecutándose. Token exists: {os.path.exists(TOKEN_FILE)}")
-                    last_refresh = now
         except KeyboardInterrupt:
             print("\n\nSaliendo...")
 
