@@ -74,11 +74,21 @@ try {
     stdio: 'inherit'
   });
 
-  // Copy result to dist root
-  const builtExe = path.join(electronDir, 'dist', 'Bakers Raid Monitor 1.0.0.exe');
+  // Copy result to dist root - find the actual built exe (name includes version)
+  const distFolder = path.join(electronDir, 'dist');
+  let builtExe = null;
+
+  if (fs.existsSync(distFolder)) {
+    const files = fs.readdirSync(distFolder);
+    const exeFile = files.find(f => f.startsWith('Bakers Raid Monitor') && f.endsWith('.exe'));
+    if (exeFile) {
+      builtExe = path.join(distFolder, exeFile);
+    }
+  }
+
   const finalExe = path.join(distDir, 'Bakers Raid Monitor.exe');
 
-  if (fs.existsSync(builtExe)) {
+  if (builtExe && fs.existsSync(builtExe)) {
     fs.mkdirSync(distDir, { recursive: true });
 
     if (fs.existsSync(finalExe)) {
